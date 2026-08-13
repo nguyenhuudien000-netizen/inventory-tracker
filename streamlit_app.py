@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import time
+import random
 
 # =========================================================================
 # 1. KHỞI TẠO CƠ SỞ DỮ LIỆU BỘ NHỚ
@@ -30,10 +31,11 @@ if 'username' not in st.session_state: st.session_state.username = ""
 if 'user_role' not in st.session_state: st.session_state.user_role = ""
 if 'exam_submitted' not in st.session_state: st.session_state.exam_submitted = False
 
-# Các biến phục vụ đếm thời gian và lưu bài thi từng câu một
+# Biến phục vụ đếm thời gian, làm từng câu một và xáo trộn đề
 if 'current_q_index' not in st.session_state: st.session_state.current_q_index = 0
 if 'user_exam_answers' not in st.session_state: st.session_state.user_exam_answers = {}
 if 'start_time' not in st.session_state: st.session_state.start_time = None
+if 'shuffled_exam_qs' not in st.session_state: st.session_state.shuffled_exam_qs = []
 
 # =========================================================================
 # GIAO DIỆN & STYLE CSS
@@ -81,10 +83,11 @@ if not st.session_state.logged_in:
                 st.session_state.username = input_user
                 st.session_state.user_role = st.session_state.users_db[input_user]["role"]
                 st.session_state.exam_submitted = False
+                st.session_state.shuffled_exam_qs = []  # Reset danh sách xáo trộn đề cũ
                 st.rerun()
             else: st.error("⚠️ Tài khoản hoặc mã bảo mật không chính xác!")
 
-# --- MÀN HÌNH CHÍNH SAU KHI ĐĂNG NHẬP ---
+# --- MÀN HÌNH CHÍNH ---
 else:
     st.markdown(f"""
         <div class="banner-container"><div class="banner-title">FTO WEPD</div><div class="banner-subtitle">WESTSIDE POLICE DEPARTMENT - HỆ THỐNG SÁT HẠCH</div></div>
@@ -98,6 +101,7 @@ else:
             st.session_state.logged_in = False
             st.session_state.username = ""
             st.session_state.exam_submitted = False
+            st.session_state.shuffled_exam_qs = []
             st.rerun()
 
     # --- LUỒNG QUẢN LÝ (ADMIN / GIẢNG VIÊN) ---
@@ -149,12 +153,12 @@ else:
                 df_res = pd.DataFrame(st.session_state.exam_results)
                 st.dataframe(df_res[["Thời Gian", "Sĩ Quan", "Số Câu Đúng", "Tổng Số Câu", "Tỷ Lệ", "Kết Quả"]], use_container_width=True, hide_index=True)
 
-    # --- LUỒNG HỌC VIÊN (ÔN LUYỆN / THI CHÍNH THỨC) ---
+    # --- LUỒNG HỌC VIÊN ---
     else:
         tab_practice, tab_exam = st.tabs(["📚 MỤC ĐỀ ÔN LUYỆN", "✍️ BÀI THI CHÍNH THỨC (25s / Câu)"])
         
         with tab_practice:
-            st.markdown("### Đề Ôn Luyện Kiến Thức (Tự do ôn tập)")
+            st.markdown("### Đề Ôn Luyện Kiến Thức (Không xáo trộn - Tự do ôn tập)")
             practice_qs = st.session_state.questions_db
             p_answers = {}
             for idx, item in enumerate(practice_qs):
@@ -167,7 +171,4 @@ else:
                 st.success(f"Kết quả ôn tập: Đúng {correct}/{len(practice_qs)} câu.")
 
         with tab_exam:
-            st.markdown("### Đề Thi Sát Hạch Chính Thức (Yêu cầu đạt 30/30 câu)")
-            exam_qs = [q for q in st.session_state.questions_db if q["type"] == "Mục thi & Ôn tập"]
-            can_user_take_exam = st.session_state.users_db[st.session_state.username]["can_exam"]
-            
+            st.markdown("### Đề Thi Sát Hạch Chính Thức (Xáo trộn câu hỏi & 100% Đạt)")
