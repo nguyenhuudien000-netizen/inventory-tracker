@@ -52,7 +52,7 @@ if not st.session_state.logged_in:
         <div class="login-box">
             <div class="login-header">
                 <div class="logo-circle">FTO</div>
-                <div class="title-main">GACHA CITY POLICE DEPARTMENT</div>
+                <div class="title-main">WESTSIDE POLIECE DEPARTMENT</div>
                 <div class="title-sub">Hệ Thống Đăng Nhập Sát Hạch & Quản Trị</div>
             </div>
         </div>
