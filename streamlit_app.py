@@ -134,7 +134,7 @@ else:
         with tab_add_q:
             st.markdown("### 📝 Soạn Thảo Câu Hỏi Trắc Nghiệm Mới")
             current_exam_q_count = len([q for q in st.session_state.questions_db if q["type"] == "Mục thi & Ôn tập"])
-            st.info(f"Số lượng câu hỏi trong danh mục đề thi hiện tại: **{current_exam_q_count} / 30** câu.")
+            st.info(f"Số lượng câu hỏi trong danh mục đề thi hiện tại: **{current_exam_q_count} / 3** câu.")
             q_text = st.text_area("Nội dung câu hỏi:")
             o1 = st.text_input("Phương án A:")
             o2 = st.text_input("Phương án B:")
