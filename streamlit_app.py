@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
+import time
 
 # =========================================================================
-# 1. KHỞI TẠO CƠ SỞ DỮ LIỆU BỘ NHỚ (Duy trì trong phiên chạy)
+# 1. KHỞI TẠO CƠ SỞ DỮ LIỆU BỘ NHỚ
 # =========================================================================
 if 'users_db' not in st.session_state:
     st.session_state.users_db = {
@@ -12,7 +13,6 @@ if 'users_db' not in st.session_state:
         "HocVien02": {"pass": "123456", "role": "Học viên", "can_exam": False}
     }
 
-# Ngân hàng câu hỏi
 if 'questions_db' not in st.session_state:
     st.session_state.questions_db = [
         {
@@ -21,23 +21,19 @@ if 'questions_db' not in st.session_state:
             "options": ["Dừng lại trước vạch dừng.", "Đi tiếp nhưng giảm tốc độ, chú ý quan sát.", "Tăng tốc vượt qua."],
             "answer": "Đi tiếp nhưng giảm tốc độ, chú ý quan sát.",
             "type": "Mục thi & Ôn tập"
-        },
-        {
-            "id": 2,
-            "question": "Hành vi chạy quá tốc độ quy định có bị nghiêm cấm không?",
-            "options": ["Bị nghiêm cấm hoàn toàn.", "Không bị cấm nếu đường vắng.", "Chỉ nhắc nhở."],
-            "answer": "Bị nghiêm cấm hoàn toàn.",
-            "type": "Mục ôn tập"
         }
     ]
 
-if 'exam_results' not in st.session_state:
-    st.session_state.exam_results = []
-
+if 'exam_results' not in st.session_state: st.session_state.exam_results = []
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'username' not in st.session_state: st.session_state.username = ""
 if 'user_role' not in st.session_state: st.session_state.user_role = ""
 if 'exam_submitted' not in st.session_state: st.session_state.exam_submitted = False
+
+# Các biến phục vụ đếm thời gian và lưu bài thi từng câu một
+if 'current_q_index' not in st.session_state: st.session_state.current_q_index = 0
+if 'user_exam_answers' not in st.session_state: st.session_state.user_exam_answers = {}
+if 'start_time' not in st.session_state: st.session_state.start_time = None
 
 # =========================================================================
 # GIAO DIỆN & STYLE CSS
@@ -58,6 +54,7 @@ st.markdown("""
     .login-box { background-color: #ffffff; padding: 40px; border-radius: 12px; box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.08); width: 450px; margin: 50px auto; text-align: center; }
     .login-header { background-color: #0b1e36; color: white; padding: 30px 20px; border-radius: 10px 10px 0 0; margin: -40px -40px 30px -40px; }
     .logo-circle { background-color: #ffcc00; color: #0b1e36; width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 18px; margin: 0 auto 15px auto; }
+    .timer-text { font-size: 24px; font-weight: bold; color: #ef4444; text-align: center; background-color: #fee2e2; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -85,63 +82,44 @@ if not st.session_state.logged_in:
                 st.session_state.user_role = st.session_state.users_db[input_user]["role"]
                 st.session_state.exam_submitted = False
                 st.rerun()
-            else:
-                st.error("⚠️ Tài khoản hoặc mã bảo mật không chính xác!")
+            else: st.error("⚠️ Tài khoản hoặc mã bảo mật không chính xác!")
 
 # --- MÀN HÌNH CHÍNH SAU KHI ĐĂNG NHẬP ---
 else:
     st.markdown(f"""
-        <div class="banner-container">
-            <div class="banner-title">FTO WEPD</div>
-            <div class="banner-subtitle">WESTSIDE POLICE DEPARTMENT - HỆ THỐNG SÁT HẠCH</div>
-        </div>
+        <div class="banner-container"><div class="banner-title">FTO WEPD</div><div class="banner-subtitle">WESTSIDE POLICE DEPARTMENT - HỆ THỐNG SÁT HẠCH</div></div>
     """, unsafe_allow_html=True)
 
     info_col, btn_col = st.columns(2)
     with info_col:
-        st.markdown(f"""
-            <div class="user-info-bar">
-                👤 Tài khoản: <b>{st.session_state.username}</b> | Chức vụ: <span style='color:#3b82f6;'><b>{st.session_state.user_role}</b></span>
-            </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"<div class='user-info-bar'>👤 Tài khoản: <b>{st.session_state.username}</b> | Chức vụ: <span style='color:#3b82f6;'><b>{st.session_state.user_role}</b></span></div>", unsafe_allow_html=True)
     with btn_col:
         if st.button("ĐĂNG XUẤT", use_container_width=True, type="secondary"):
             st.session_state.logged_in = False
             st.session_state.username = ""
-            st.session_state.user_role = ""
             st.session_state.exam_submitted = False
             st.rerun()
 
     # --- LUỒNG QUẢN LÝ (ADMIN / GIẢNG VIÊN) ---
     if st.session_state.user_role in ["Quản trị viên", "Giảng viên"]:
-        tab_users, tab_add_q, tab_results = st.tabs([
-            "👥 QUẢN LÝ THÀNH VIÊN & CẤP QUYỀN THI", 
-            "📝 TỰ BIÊN SOẠN CÂU HỎI", 
-            "📊 THỐNG KÊ ĐIỂM SỐ KIỂM TRA"
-        ])
+        tab_users, tab_add_q, tab_results = st.tabs(["👥 QUẢN LÝ THÀNH VIÊN", "📝 TỰ BIÊN SOẠN CÂU HỎI", "📊 THỐNG KÊ ĐIỂM SỐ"])
         
         with tab_users:
-            st.markdown("### ➕ Thêm Tài Khoản Mới Vào Hệ Thống")
+            st.markdown("### ➕ Thêm Tài Khoản Mới")
             c1, c2, c3 = st.columns(3)
-            with c1: new_u = st.text_input("Số phù hiệu / Username mới:", key="add_u")
-            with c2: new_p = st.text_input("Mật khẩu truy cập:", type="password", key="add_p")
-            with c3: new_r = st.selectbox("Vai trò chức vụ:", ["Học viên", "Giảng viên"], key="add_r")
-            
+            with c1: new_u = st.text_input("Username mới:", key="add_u")
+            with c2: new_p = st.text_input("Mật khẩu:", type="password", key="add_p")
+            with c3: new_r = st.selectbox("Chức vụ:", ["Học viên", "Giảng viên"], key="add_r")
             if st.button("Xác nhận thêm người dùng", type="primary"):
                 if new_u and new_p:
                     st.session_state.users_db[new_u] = {"pass": new_p, "role": new_r, "can_exam": False}
-                    st.success(f"Đã thêm thành công tài khoản: {new_u} ({new_r})")
+                    st.success(f"Đã thêm tài khoản: {new_u}")
                     st.rerun()
-                else: st.error("Vui lòng điền đủ thông tin!")
-                
             st.divider()
-            st.markdown("### 🔐 Danh Sách Thành Viên & Cấp Quyền Lượt Thi")
-            
             for user, data in st.session_state.users_db.items():
                 if data["role"] == "Học viên":
                     col_u, col_status = st.columns(2)
-                    with col_u:
-                        st.write(f"• **{user}** (Mật khẩu: {data['pass']})")
+                    with col_u: st.write(f"• **{user}** (Mật khẩu: {data['pass']})")
                     with col_status:
                         current_status = st.checkbox("Cho phép thi", value=data["can_exam"], key=f"perm_{user}")
                         if current_status != data["can_exam"]:
@@ -150,45 +128,46 @@ else:
         
         with tab_add_q:
             st.markdown("### 📝 Soạn Thảo Câu Hỏi Trắc Nghiệm Mới")
-            # Hiển thị số lượng câu hỏi hiện tại để admin dễ theo dõi tiến độ soạn bài
             current_exam_q_count = len([q for q in st.session_state.questions_db if q["type"] == "Mục thi & Ôn tập"])
-            st.info(f"Số lượng câu hỏi trong danh mục 'Mục thi & Ôn tập' hiện tại: **{current_exam_q_count} / 30** câu.")
-            
+            st.info(f"Số lượng câu hỏi trong danh mục đề thi hiện tại: **{current_exam_q_count} / 30** câu.")
             q_text = st.text_area("Nội dung câu hỏi:")
             o1 = st.text_input("Phương án A:")
             o2 = st.text_input("Phương án B:")
             o3 = st.text_input("Phương án C:")
-            q_ans = st.selectbox("Lựa chọn phương án chính xác nhất:", [o1, o2, o3])
-            q_type = st.radio("Phân loại danh mục câu hỏi:", ["Mục thi & Ôn tập", "Mục ôn tập"])
-            
+            q_ans = st.selectbox("Lựa chọn phương án đúng nhất:", [o1, o2, o3])
+            q_type = st.radio("Phân loại danh mục:", ["Mục thi & Ôn tập", "Mục ôn tập"])
             if st.button("Lưu câu hỏi vào ngân hàng đề", type="primary"):
                 if q_text and o1 and o2 and o3:
-                    new_q_item = {
-                        "id": len(st.session_state.questions_db) + 1,
-                        "question": q_text,
-                        "options": [o1, o2, o3],
-                        "answer": q_ans,
-                        "type": q_type
-                    }
-                    st.session_state.questions_db.append(new_q_item)
-                    st.success("Đã lưu câu hỏi mới vào hệ thống thành công!")
+                    st.session_state.questions_db.append({"id": len(st.session_state.questions_db) + 1, "question": q_text, "options": [o1, o2, o3], "answer": q_ans, "type": q_type})
+                    st.success("Đã lưu câu hỏi thành công!")
                     st.rerun()
-                else: st.error("Vui lòng không để trống thông tin soạn thảo!")
 
         with tab_results:
-            st.markdown("### 📊 Kết Quả Kiểm Tra Chi Tiết Của Học Viên")
-            if len(st.session_state.exam_results) == 0:
-                st.info("Chưa có dữ liệu thi kiểm tra điểm số nào được ghi nhận.")
+            st.markdown("### 📊 Kết Quả Kiểm Tra Chi Tiết")
+            if len(st.session_state.exam_results) == 0: st.info("Chưa có dữ liệu thi nào.")
             else:
                 df_res = pd.DataFrame(st.session_state.exam_results)
                 st.dataframe(df_res[["Thời Gian", "Sĩ Quan", "Số Câu Đúng", "Tổng Số Câu", "Tỷ Lệ", "Kết Quả"]], use_container_width=True, hide_index=True)
 
     # --- LUỒNG HỌC VIÊN (ÔN LUYỆN / THI CHÍNH THỨC) ---
     else:
-        tab_practice, tab_exam = st.tabs(["📚 MỤC ĐỀ ÔN LUYỆN", "✍️ BÀI THI CHÍNH THỨC"])
+        tab_practice, tab_exam = st.tabs(["📚 MỤC ĐỀ ÔN LUYỆN", "✍️ BÀI THI CHÍNH THỨC (25s / Câu)"])
         
         with tab_practice:
             st.markdown("### Đề Ôn Luyện Kiến Thức (Tự do ôn tập)")
             practice_qs = st.session_state.questions_db
-            
             p_answers = {}
+            for idx, item in enumerate(practice_qs):
+                st.markdown(f"**Câu {idx+1}: {item['question']}**")
+                p_answers[idx] = st.radio("Chọn phương án:", item["options"], key=f"pract_{item['id']}")
+            if st.button("Kiểm tra đáp án nhanh"):
+                correct = 0
+                for idx, item in enumerate(practice_qs):
+                    if p_answers[idx] == item["answer"]: correct += 1
+                st.success(f"Kết quả ôn tập: Đúng {correct}/{len(practice_qs)} câu.")
+
+        with tab_exam:
+            st.markdown("### Đề Thi Sát Hạch Chính Thức (Yêu cầu đạt 30/30 câu)")
+            exam_qs = [q for q in st.session_state.questions_db if q["type"] == "Mục thi & Ôn tập"]
+            can_user_take_exam = st.session_state.users_db[st.session_state.username]["can_exam"]
+            
