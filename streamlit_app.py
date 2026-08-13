@@ -4,16 +4,15 @@ import pandas as pd
 # =========================================================================
 # 1. KHỞI TẠO CƠ SỞ DỮ LIỆU BỘ NHỚ (Duy trì trong phiên chạy)
 # =========================================================================
-# Cơ sở dữ liệu tài khoản và quyền hạn ban đầu
 if 'users_db' not in st.session_state:
     st.session_state.users_db = {
         "admin": {"pass": "admin123", "role": "Quản trị viên", "can_exam": True},
         "GIANGVIEN": {"pass": "123456", "role": "Giảng viên", "can_exam": True},
-        "S-01": {"pass": "123456", "role": "Học viên", "can_exam": False},  # Mặc định chưa cấp quyền thi
+        "S-01": {"pass": "123456", "role": "Học viên", "can_exam": False},
         "HocVien02": {"pass": "123456", "role": "Học viên", "can_exam": False}
     }
 
-# Ngân hàng câu hỏi (Tự động chia nhóm Ôn tập và Thi)
+# Ngân hàng câu hỏi
 if 'questions_db' not in st.session_state:
     st.session_state.questions_db = [
         {
@@ -21,22 +20,20 @@ if 'questions_db' not in st.session_state:
             "question": "Khi gặp tín hiệu đèn vàng nhấp nháy, bạn phải xử lý như thế nào?",
             "options": ["Dừng lại trước vạch dừng.", "Đi tiếp nhưng giảm tốc độ, chú ý quan sát.", "Tăng tốc vượt qua."],
             "answer": "Đi tiếp nhưng giảm tốc độ, chú ý quan sát.",
-            "type": "Mục thi & Ôn tập"  # Câu hỏi dùng cho cả 2 mục
+            "type": "Mục thi & Ôn tập"
         },
         {
             "id": 2,
             "question": "Hành vi chạy quá tốc độ quy định có bị nghiêm cấm không?",
             "options": ["Bị nghiêm cấm hoàn toàn.", "Không bị cấm nếu đường vắng.", "Chỉ nhắc nhở."],
             "answer": "Bị nghiêm cấm hoàn toàn.",
-            "type": "Mục ôn tập"  # Chỉ xuất hiện khi ôn tập
+            "type": "Mục ôn tập"
         }
     ]
 
-# Lưu lịch sử điểm số thi
 if 'exam_results' not in st.session_state:
     st.session_state.exam_results = []
 
-# Khởi tạo các trạng thái hệ thống
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'username' not in st.session_state: st.session_state.username = ""
 if 'user_role' not in st.session_state: st.session_state.user_role = ""
@@ -64,7 +61,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 2. MÀN HÌNH ĐĂNG NHẬP ---
+# --- MÀN HÌNH ĐĂNG NHẬP ---
 if not st.session_state.logged_in:
     st.markdown("""
         <div class="login-box">
@@ -76,7 +73,6 @@ if not st.session_state.logged_in:
         </div>
     """, unsafe_allow_html=True)
     
-    # ĐÃ SỬA LỖI Ở ĐÂY: Thêm số 3 vào trong ngoặc để định dạng chia làm 3 cột chuẩn xác
     col1, col2, col3 = st.columns(3)
     with col2:
         input_user = st.text_input("TÊN ĐĂNG NHẬP / SỐ PHÙ HIỆU", placeholder="Nhập tài khoản")
@@ -92,9 +88,8 @@ if not st.session_state.logged_in:
             else:
                 st.error("⚠️ Tài khoản hoặc mã bảo mật không chính xác!")
 
-# --- 3. MÀN HÌNH CHÍNH SAU KHI ĐĂNG NHẬP ---
+# --- MÀN HÌNH CHÍNH SAU KHI ĐĂNG NHẬP ---
 else:
-    # Banner đỉnh trang
     st.markdown(f"""
         <div class="banner-container">
             <div class="banner-title">FTO WEPD</div>
@@ -102,7 +97,6 @@ else:
         </div>
     """, unsafe_allow_html=True)
 
-    # Thanh trạng thái người dùng
     info_col, btn_col = st.columns(2)
     with info_col:
         st.markdown(f"""
@@ -118,8 +112,7 @@ else:
             st.session_state.exam_submitted = False
             st.rerun()
 
-    # Phân chia luồng giao diện theo Chức vụ
-    # A. GIAO DIỆN QUẢN LÝ (Dành cho Admin và Giảng viên)
+    # --- LUỒNG QUẢN LÝ (ADMIN / GIẢNG VIÊN) ---
     if st.session_state.user_role in ["Quản trị viên", "Giảng viên"]:
         tab_users, tab_add_q, tab_results = st.tabs([
             "👥 QUẢN LÝ THÀNH VIÊN & CẤP QUYỀN THI", 
@@ -127,7 +120,6 @@ else:
             "📊 THỐNG KÊ ĐIỂM SỐ KIỂM TRA"
         ])
         
-        # TAB QUẢN LÝ THÀNH VIÊN & CẤP QUYỀN
         with tab_users:
             st.markdown("### ➕ Thêm Tài Khoản Mới Vào Hệ Thống")
             c1, c2, c3 = st.columns(3)
@@ -144,9 +136,7 @@ else:
                 
             st.divider()
             st.markdown("### 🔐 Danh Sách Thành Viên & Cấp Quyền Lượt Thi")
-            st.caption("Gợi ý: Tích chọn vào ô tương ứng để cho phép Học viên đó được quyền vào làm 'Bài thi chính thức'.")
             
-            # Hiển thị và cập nhật quyền thi trực tiếp bằng bảng checkbox
             for user, data in st.session_state.users_db.items():
                 if data["role"] == "Học viên":
                     col_u, col_status = st.columns(2)
@@ -158,9 +148,12 @@ else:
                             st.session_state.users_db[user]["can_exam"] = current_status
                             st.toast(f"Đã cập nhật quyền thi cho {user}!")
         
-        # TAB TỰ BIÊN SOẠN CÂU HỎI
         with tab_add_q:
             st.markdown("### 📝 Soạn Thảo Câu Hỏi Trắc Nghiệm Mới")
+            # Hiển thị số lượng câu hỏi hiện tại để admin dễ theo dõi tiến độ soạn bài
+            current_exam_q_count = len([q for q in st.session_state.questions_db if q["type"] == "Mục thi & Ôn tập"])
+            st.info(f"Số lượng câu hỏi trong danh mục 'Mục thi & Ôn tập' hiện tại: **{current_exam_q_count} / 30** câu.")
+            
             q_text = st.text_area("Nội dung câu hỏi:")
             o1 = st.text_input("Phương án A:")
             o2 = st.text_input("Phương án B:")
@@ -182,10 +175,20 @@ else:
                     st.rerun()
                 else: st.error("Vui lòng không để trống thông tin soạn thảo!")
 
-        # TAB THỐNG KÊ ĐIỂM SỐ
         with tab_results:
             st.markdown("### 📊 Kết Quả Kiểm Tra Chi Tiết Của Học Viên")
             if len(st.session_state.exam_results) == 0:
                 st.info("Chưa có dữ liệu thi kiểm tra điểm số nào được ghi nhận.")
             else:
                 df_res = pd.DataFrame(st.session_state.exam_results)
+                st.dataframe(df_res[["Thời Gian", "Sĩ Quan", "Số Câu Đúng", "Tổng Số Câu", "Tỷ Lệ", "Kết Quả"]], use_container_width=True, hide_index=True)
+
+    # --- LUỒNG HỌC VIÊN (ÔN LUYỆN / THI CHÍNH THỨC) ---
+    else:
+        tab_practice, tab_exam = st.tabs(["📚 MỤC ĐỀ ÔN LUYỆN", "✍️ BÀI THI CHÍNH THỨC"])
+        
+        with tab_practice:
+            st.markdown("### Đề Ôn Luyện Kiến Thức (Tự do ôn tập)")
+            practice_qs = st.session_state.questions_db
+            
+            p_answers = {}
