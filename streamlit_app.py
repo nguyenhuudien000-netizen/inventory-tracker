@@ -33,7 +33,7 @@ if 'submitted' not in st.session_state: st.session_state.submitted = False
 # =========================================================================
 # GIAO DIỆN & STYLE
 # =========================================================================
-st.set_page_config(page_title="FTO GCPD - Hệ Thống Sát Hạch", page_icon="🚓", layout="centered")
+st.set_page_config(page_title="FTO WEPD - Hệ Thống Sát Hạch", page_icon="🚓", layout="centered")
 
 st.markdown("""
     <style>
