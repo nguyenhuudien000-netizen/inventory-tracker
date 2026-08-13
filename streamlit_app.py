@@ -17,10 +17,10 @@ if 'users_db' not in st.session_state:
 if 'questions_db' not in st.session_state:
     st.session_state.questions_db = [
         {
-            "id": 1,
+            "id": 
             "question": 
             "options": 
-            "answer": "
+            "answer": 
             "explain": 
             "type": "Mục thi & Ôn tập"
         }
