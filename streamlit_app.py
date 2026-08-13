@@ -18,10 +18,10 @@ if 'questions_db' not in st.session_state:
     st.session_state.questions_db = [
         {
             "id": 1,
-            "question": "Khi gặp tín hiệu đèn vàng nhấp nháy, bạn phải xử lý như thế nào?",
-            "options": ["Dừng lại trước vạch dừng.", "Đi tiếp nhưng giảm tốc độ, chú ý quan sát.", "Tăng tốc vượt qua."],
-            "answer": "Đi tiếp nhưng giảm tốc độ, chú ý quan sát.",
-            "explain": "Theo luật giao thông đường bộ WEPD, đèn vàng nhấp nháy báo hiệu được đi nhưng phải giảm tốc độ và chú ý quan sát an toàn.",
+            "question": 
+            "options": 
+            "answer": "
+            "explain": 
             "type": "Mục thi & Ôn tập"
         }
     ]
