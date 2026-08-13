@@ -4,7 +4,7 @@ import random
 from datetime import datetime
 
 # =========================================================================
-# 1. NGÂN HÀNG ĐỀ THI GỐC (ĐÃ NẠP SẴN 10 CÂU HỎI THỰC TẾ)
+# 1. NGÂN HÀNG ĐỀ THI GỐC CỐ ĐỊNH (ĐÃ NẠP SẴN 10 CÂU HỎI THỰC TẾ)
 # =========================================================================
 if 'questions_db' not in st.session_state:
     st.session_state.questions_db = [
@@ -119,7 +119,7 @@ if not st.session_state.logged_in:
             st.rerun()
         else: st.error("⚠️ Sai tài khoản hoặc mật khẩu!")
 
-# --- MÀN HÌNH CHÍNH CHẠY ONLINE ---
+# --- MÀN HÌNH CHÍNH ---
 else:
     st.markdown('<div class="banner-graphic"><div class="banner-title-wpd">FTO WEPD</div><div class="banner-tag-wpd">WESTSIDE POLICE DEPARTMENT</div></div>', unsafe_allow_html=True)
     st.info(f"👤 Tài khoản: {st.session_state.username} | Chức vụ: {st.session_state.user_role}")
@@ -146,7 +146,9 @@ else:
                     st.rerun()
             st.divider()
             st.markdown("### 🔐 Danh sách cấp quyền thi")
-            # ĐÃ ĐỒNG BỘ GỘP DÒNG: Loại bỏ hoàn toàn khối st.columns dễ gây lệch hàng tụt dòng trên GitHub
             for user, data in st.session_state.users_db.items():
                 if data["role"] == "Học viên":
                     status = st.checkbox(f"Mở khóa đề thi cho sĩ quan: {user} (Mật khẩu: {data['pass']})", value=data["can_exam"], key=f"perm_lock_{user}")
+                    st.session_state.users_db[user]["can_exam"] = status
+
+        with tab_add_q:
