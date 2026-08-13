@@ -115,6 +115,7 @@ else:
             "📊 THỐNG KÊ ĐIỂM SỐ"
         ])
         
+        # TAB 1: QUẢN LÝ THÀNH VIÊN
         with tab_users:
             st.markdown("### ➕ Thêm Tài Khoản Mới")
             c1, c2, c3 = st.columns(3)
@@ -137,6 +138,7 @@ else:
                             st.session_state.users_db[user]["can_exam"] = current_status
                             st.toast(f"Đã cập nhật quyền thi cho {user}!")
         
+        # TAB 2: SOẠN CÂU HỎI MỚI
         with tab_add_q:
             st.markdown("### ➕ Tạo Câu Hỏi Trắc Nghiệm")
             current_exam_q_count = len([q for q in st.session_state.questions_db if q["type"] == "Mục thi & Ôn tập"])
@@ -153,7 +155,7 @@ else:
             if st.button("Lưu câu hỏi vào ngân hàng đề", type="primary"):
                 if q_text and o1 and o2 and o3:
                     st.session_state.questions_db.append({
-                        "id": int(time.time()),
+                        "id": int(time.time()), # Tạo ID duy nhất không trùng lặp
                         "question": q_text, 
                         "options": [o1, o2, o3], 
                         "answer": q_ans, 
@@ -163,10 +165,10 @@ else:
                     st.success("Đã lưu câu hỏi thành công!")
                     st.rerun()
 
+        # --- ĐÃ THÊM TAB 3: XEM VÀ CHỈNH SỬA CÂU HỎI TRỰC TIẾP ---
         with tab_edit_q:
             st.markdown("### 📝 Quản Lý Danh Sách Đề Sách Câu Hỏi Hiện Tại")
+            
             if len(st.session_state.questions_db) == 0:
                 st.warning("Ngân hàng đề trống! Vui lòng qua tab soạn câu hỏi để thêm mới.")
             else:
-                filter_type = st.selectbox("Lọc câu hỏi theo mục dữ liệu:", ["Tất cả câu hỏi", "Mục thi & Ôn tập", "Mục ôn tập"])
-                for idx, q_item in enumerate(st.session_state.questions_db):
