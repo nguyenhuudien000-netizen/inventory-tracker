@@ -2,40 +2,10 @@ import streamlit as st
 import pandas as pd
 import time
 import random
-from datetime import datetime
 
 # =========================================================================
-# 1. NGÂN HÀNG CÂU HỎI GỐC CỐ ĐỊNH (Bạn tự gõ sẵn câu hỏi vào đây trên GitHub)
+# 1. KHỞI TẠO CƠ SỞ DỮ LIỆU BỘ NHỚ
 # =========================================================================
-if 'questions_db' not in st.session_state:
-    st.session_state.questions_db = [
-        {
-            "id": 1,
-            "question": "Mẫu câu 1: Khi gặp tín hiệu đèn vàng nhấp nháy, bạn phải xử lý như thế nào?",
-            "options": ["Dừng lại trước vạch dừng.", "Đi tiếp nhưng giảm tốc độ, chú ý quan sát.", "Tăng tốc vượt qua."],
-            "answer": "Đi tiếp nhưng giảm tốc độ, chú ý quan sát.",
-            "explain": "Theo luật WEPD, đèn vàng nhấp nháy báo hiệu được đi nhưng phải giảm tốc độ và chú ý quan sát.",
-            "type": "Mục thi & Ôn tập"
-        },
-        {
-            "id": 2,
-            "question": "Mẫu câu 2: Hành vi điều khiển xe cơ giới chạy quá tốc độ quy định bị nghiêm cấm hay không?",
-            "options": ["Bị nghiêm cấm hoàn toàn.", "Không bị nghiêm cấm nếu đường vắng.", "Chỉ bị nhắc nhở."],
-            "answer": "Bị nghiêm cấm hoàn toàn.",
-            "explain": "Chạy quá tốc độ quy định là hành vi nguy hiểm và bị nghiêm cấm hoàn toàn.",
-            "type": "Mục thi & Ôn tập"
-        },
-        {
-            "id": 3,
-            "question": "Mẫu câu 3: Người lái xe phải làm gì khi điều khiển xe vào đường cao tốc?",
-            "options": ["Phải có tín hiệu xin vào và phải nhường đường cho xe đang chạy trên đường.", "Tăng tốc độ thật nhanh để hòa nhập dòng xe.", "Cứ xi nhan là được đi vào ngay."],
-            "answer": "Phải có tín hiệu xin vào và phải nhường đường cho xe đang chạy trên đường.",
-            "explain": "Luật quy định phải nhường đường cho xe đang chạy trên đường chính trước khi nhập làn.",
-            "type": "Mục thi & Ôn tập"
-        }
-    ]
-
-# Khởi tạo cơ sở dữ liệu tài khoản và các trạng thái hệ thống
 if 'users_db' not in st.session_state:
     st.session_state.users_db = {
         "admin": {"pass": "admin123", "role": "Quản trị viên", "can_exam": True},
@@ -43,6 +13,18 @@ if 'users_db' not in st.session_state:
         "S-01": {"pass": "123456", "role": "Học viên", "can_exam": False},
         "HocVien02": {"pass": "123456", "role": "Học viên", "can_exam": False}
     }
+
+if 'questions_db' not in st.session_state:
+    st.session_state.questions_db = [
+        {
+            "id": 1,
+            "question": "Khi gặp tín hiệu đèn vàng nhấp nháy, bạn phải xử lý như thế nào?",
+            "options": ["Dừng lại trước vạch dừng.", "Đi tiếp nhưng giảm tốc độ, chú ý quan sát.", "Tăng tốc vượt qua."],
+            "answer": "Đi tiếp nhưng giảm tốc độ, chú ý quan sát.",
+            "explain": "Theo luật giao thông đường bộ WEPD, đèn vàng nhấp nháy báo hiệu được đi nhưng phải giảm tốc độ và chú ý quan sát an toàn.",
+            "type": "Mục thi & Ôn tập"
+        }
+    ]
 
 if 'exam_results' not in st.session_state: st.session_state.exam_results = []
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
@@ -76,7 +58,6 @@ st.markdown("""
     .logo-circle { background-color: #ffcc00; color: #0b1e36; width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 18px; margin: 0 auto 15px auto; }
     .timer-text { font-size: 24px; font-weight: bold; color: #ef4444; text-align: center; background-color: #fee2e2; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
     .explain-box { background-color: #fffbeb; border-left: 5px solid #d97706; padding: 12px; margin-top: 5px; border-radius: 4px; color: #92400e; font-size: 14px; }
-    .q-box-custom { background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -107,7 +88,7 @@ if not st.session_state.logged_in:
                 st.rerun()
             else: st.error("⚠️ Tài khoản hoặc mã bảo mật không chính xác!")
 
-# --- MÀN HÌNH CHÍNH ---
+# --- MÀN HÌNH CHÍNH MẠNG NỘI BỘ ---
 else:
     st.markdown(f"""
         <div class="banner-container"><div class="banner-title">FTO WEPD</div><div class="banner-subtitle">WESTSIDE POLICE DEPARTMENT - HỆ THỐNG SÁT HẠCH</div></div>
@@ -126,11 +107,9 @@ else:
 
     # --- LUỒNG QUẢN LÝ (ADMIN / GIẢNG VIÊN) ---
     if st.session_state.user_role in ["Quản trị viên", "Giảng viên"]:
-        # ĐÃ CẬP NHẬT: Tách riêng thành 4 Tab rõ ràng để không sợ bị khuất màn hình
-        tab_users, tab_add_q, tab_view_del, tab_results = st.tabs([
+        tab_users, tab_add_q, tab_results = st.tabs([
             "👥 QUẢN LÝ THÀNH VIÊN", 
-            "📝 TỰ BIÊN SOẠN CÂU HỎI", 
-            "🗑️ XEM & XÓA CÂU HỎI",
+            "¼ TỰ BIÊN SOẠN CÂU HỎI", 
             "📊 THỐNG KÊ ĐIỂM SỐ"
         ])
         
@@ -159,8 +138,7 @@ else:
         with tab_add_q:
             st.markdown("### 📝 Soạn Thảo Câu Hỏi Trắc Nghiệm Mới")
             current_exam_q_count = len([q for q in st.session_state.questions_db if q["type"] == "Mục thi & Ôn tập"])
-            st.info(f"Số lượng câu hỏi phục vụ đề thi hiện tại: **{current_exam_q_count} / 30** câu.")
-            
+            st.info(f"Số lượng câu hỏi trong danh mục đề thi hiện tại: **{current_exam_q_count} / 30** câu.")
             q_text = st.text_area("Nội dung câu hỏi:", key="new_q_text")
             o1 = st.text_input("Phương án A:", key="new_o1")
             o2 = st.text_input("Phương án B:", key="new_o2")
@@ -168,3 +146,26 @@ else:
             
             q_ans = st.selectbox("Lựa chọn phương án đúng nhất:", [o1, o2, o3], key="new_q_ans")
             q_explain = st.text_area("Giải thích đáp án (Hiển thị khi học viên trả lời sai):", placeholder="Nhập căn cứ pháp lý...", key="new_q_exp")
+            q_type = st.radio("Phân loại danh mục:", ["Mục thi & Ôn tập", "Mục ôn tập"], key="new_q_type")
+            
+            if st.button("Lưu câu hỏi vào ngân hàng đề", type="primary"):
+                if q_text and o1 and o2 and o3:
+                    st.session_state.questions_db.append({
+                        "id": int(time.time() + random.randint(1,100)),
+                        "question": q_text, "options": [o1, o2, o3], "answer": q_ans, 
+                        "explain": q_explain if q_explain else "Không có phần giải thích.", "type": q_type
+                    })
+                    st.success("Đã lưu câu hỏi thành công!")
+                    st.rerun()
+
+            # --- SỬA LỖI TẠI ĐÂY: Hiển thị danh sách và nút xóa bằng giao diện hộp chuẩn an toàn ---
+            st.divider()
+            st.markdown("### 📋 DANH SÁCH & XÓA CÂU HỎI TRONG ĐỀ")
+            if len(st.session_state.questions_db) == 0:
+                st.caption("Chưa có câu hỏi nào trong hệ thống.")
+            else:
+                for idx, q_item in enumerate(st.session_state.questions_db):
+                    with st.expander(f"📦 Mã số câu {idx+1} ({q_item['type']}) - Click để xem chi tiết"):
+                        st.write(f"**Câu hỏi:** {q_item['question']}")
+                        st.write(f"**Đáp án đúng:** {q_item['answer']}")
+                        st.write(f"**Giải thích:** {q_item.get('explain', 'Không có')}")
