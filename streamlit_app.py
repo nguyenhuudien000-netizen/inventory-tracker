@@ -4,7 +4,7 @@ import random
 from datetime import datetime
 
 # =========================================================================
-# 1. NGÂN HÀNG ĐỀ THI GỐC CỐ ĐỊNH (ĐÃ NẠP SẴN 10 CÂU HỎI THỰC TẾ)
+# 1. KHỞI TẠO NGÂN HÀNG ĐỀ THI CỐ ĐỊNH TRONG BỘ NHỚ
 # =========================================================================
 if 'questions_db' not in st.session_state:
     st.session_state.questions_db = [
@@ -40,7 +40,7 @@ if 'questions_db' not in st.session_state:
         },
         {
             "id": 7, "CauHoi": "Tội phạm bán túi bột mì cho NPC, khi chạy trốn PD thì họ không được phép trốn vào đâu?",
-            "options": ["Khu quân sự", "Khu dân cư", "Nhà riêng"],
+            "options": ["Khu quân sự", "Khu dân cư", "Nhã riêng"],
             "answer": "Khu quân sự", "explain": "Khu vực quân sự là vùng cấm nghiêm ngặt đối với tội phạm lẩn trốn."
         },
         {
@@ -60,7 +60,7 @@ if 'questions_db' not in st.session_state:
         }
     ]
 
-# Khởi tạo dữ liệu người dùng, thông báo và lịch sử điểm
+# Khởi tạo các thành phần lưu trữ nền tảng hệ thống
 if 'announcements_db' not in st.session_state:
     st.session_state.announcements_db = [
         {"Ngay": "05/03/2026", "TieuDe": "Tranh thủ thời gian học", "NoiDung": "Khi không có giảng viên, các Sĩ quan vui lòng tự học trên web nha."},
@@ -84,7 +84,7 @@ if 'start_time' not in st.session_state: st.session_state.start_time = None
 if 'shuffled_exam_qs' not in st.session_state: st.session_state.shuffled_exam_qs = []
 
 # =========================================================================
-# ĐỊNH DẠNG GIAO DIỆN CHUẨN ĐẸP
+# ĐỊNH DẠNG ĐỒ HỌA GIAO DIỆN
 # =========================================================================
 st.set_page_config(page_title="FTO WEPD - Hệ Thống Sát Hạch", page_icon="🚓", layout="centered")
 
@@ -100,17 +100,17 @@ st.markdown("""
     .noti-flat-card { background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px; margin-bottom: 12px; }
     .timer-text { font-size: 24px; font-weight: bold; color: #ef4444; text-align: center; background-color: #fee2e2; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
     .explain-box { background-color: #fffbeb; border-left: 5px solid #d97706; padding: 12px; color: #92400e; font-size: 14px; }
-    .score-card-custom { background-color: #ffffff; border-left: 5px solid #3b82f6; padding: 15px; border-radius: 6px; margin-bottom: 10px; box-shadow: 0px 2px 4px rgba(0,0,0,0.05); }
+    .score-card-custom { background-color: #ffffff; border-left: 5px solid #3b82f6; padding: 15px; border-radius: 6px; margin-bottom: 10px; }
     div.stButton > button { background-color: #0b1e36 !important; color: white !important; font-weight: bold !important; width: 100%; border-radius: 4px !important; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- MÀN HÌNH ĐĂNG NHẬP ---
+# --- MÀN HÌNH ĐĂNG NHẬP CHÍNH ---
 if not st.session_state.logged_in:
     st.markdown('<div class="banner-graphic"><div class="banner-title-wpd">FTO WEPD</div><div class="banner-tag-wpd">HỌC VÀ THI TRẮC NGHIỆM</div></div>', unsafe_allow_html=True)
-    input_user = st.text_input("TÊN ĐĂNG NHẬP / SỐ PHÙ HIỆU", key="login_username_field")
-    input_pass = st.text_input("MÃ BẢO MẬT", type="password", key="login_password_field")
-    if st.button("ĐĂNG NHẬP HỆ THỐNG"):
+    input_user = st.text_input("TÊN ĐĂNG NHẬP / SỐ PHÙ HIỆU", key="login_user_key")
+    input_pass = st.text_input("MÃ BẢO MẬT", type="password", key="login_pass_key")
+    if st.button("ĐĂNG NHẬP HỆ THỐNG", key="btn_login_submit"):
         if input_user in st.session_state.users_db and st.session_state.users_db[input_user]["pass"] == input_pass:
             st.session_state.logged_in = True
             st.session_state.username = input_user
@@ -119,36 +119,35 @@ if not st.session_state.logged_in:
             st.rerun()
         else: st.error("⚠️ Sai tài khoản hoặc mật khẩu!")
 
-# --- MÀN HÌNH CHÍNH ---
+# --- MÀN HÌNH CHÍNH SAU ĐĂNG NHẬP ---
 else:
     st.markdown('<div class="banner-graphic"><div class="banner-title-wpd">FTO WEPD</div><div class="banner-tag-wpd">WESTSIDE POLICE DEPARTMENT</div></div>', unsafe_allow_html=True)
     st.info(f"👤 Tài khoản: {st.session_state.username} | Chức vụ: {st.session_state.user_role}")
     
-    if st.button("🔴 ĐĂNG XUẤT HỆ THỐNG"):
+    if st.button("🔴 ĐĂNG XUẤT HỆ THỐNG", key="btn_logout_action"):
         st.session_state.logged_in = False
         st.session_state.username = ""
         st.session_state.exam_submitted = False
         st.session_state.shuffled_exam_qs = []
         st.rerun()
 
-    # PHÂN CHIA GIAO DIỆN THEO CHỨC VỤ
+    st.divider()
+
+    # SỬ DỤNG THANH MENU SELECTBOX PHẲNG TUYỆT ĐỐI (LOẠI BỎ HOÀN TOÀN ST.TABS GÂY LỖI THỤT LỀ)
     if st.session_state.user_role in ["Quản trị viên", "Giảng viên"]:
-        tab_users, tab_add_q, tab_results, tab_news_manage = st.tabs(["👥 QUẢN LÝ THÀNH VIÊN", "📝 SOẠN CÂU HỎI MỚI", "📊 THỐNG KÊ ĐIỂM SỐ", "📋 QUẢN LÝ THÔNG BÁO"])
+        menu_admin = st.selectbox("⚙️ MENU QUẢN LÝ BAN CHỈ HUY:", ["👥 QUẢN LÝ THÀNH VIÊN", "📝 SOẠN CÂU HỎI MỚI", "📊 THỐNG KÊ ĐIỂM SỐ", "📋 QUẢN LÝ THÔNG BÁO"])
         
-        with tab_users:
-            st.markdown("### ➕ Thêm học viên mới")
-            add_u = st.text_input("Tên tài khoản mới:", key="create_user_u")
-            add_p = st.text_input("Mật khẩu bảo mật:", type="password", key="create_user_p")
-            if st.button("Xác nhận thêm tài khoản", key="btn_confirm_user_add"):
+        if menu_admin == "👥 QUẢN LÝ THÀNH VIÊN":
+            st.markdown("### ➕ Đăng ký học viên mới")
+            add_u = st.text_input("Tên tài khoản mới:", key="add_new_user_u")
+            add_p = st.text_input("Mật khẩu bảo mật:", type="password", key="add_new_user_p")
+            if st.button("Xác nhận tạo tài khoản", key="btn_save_user"):
                 if add_u and add_p:
                     st.session_state.users_db[add_u] = {"pass": add_p, "role": "Học viên", "can_exam": False}
                     st.success(f"Đã thêm học viên: {add_u}")
                     st.rerun()
             st.divider()
-            st.markdown("### 🔐 Danh sách cấp quyền thi")
+            st.markdown("### 🔐 Danh sách cấp quyền lượt thi")
             for user, data in st.session_state.users_db.items():
                 if data["role"] == "Học viên":
-                    status = st.checkbox(f"Mở khóa đề thi cho sĩ quan: {user} (Mật khẩu: {data['pass']})", value=data["can_exam"], key=f"perm_lock_{user}")
-                    st.session_state.users_db[user]["can_exam"] = status
-
-        with tab_add_q:
+                    status = st.checkbox(f"Kích hoạt quyền thi cho Sĩ quan: {user} (Mật khẩu: {data['pass']})", value=data["can_exam"], key=f"p_lock_{user}")
