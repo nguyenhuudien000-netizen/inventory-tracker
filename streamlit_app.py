@@ -58,7 +58,6 @@ st.markdown("""
     .logo-circle { background-color: #ffcc00; color: #0b1e36; width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 18px; margin: 0 auto 15px auto; }
     .timer-text { font-size: 24px; font-weight: bold; color: #ef4444; text-align: center; background-color: #fee2e2; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
     .explain-box { background-color: #fffbeb; border-left: 5px solid #d97706; padding: 12px; margin-top: 5px; border-radius: 4px; color: #92400e; font-size: 14px; }
-    .q-list-card { background-color: #f8fafc; border-left: 5px solid #64748b; padding: 15px; border-radius: 6px; margin-bottom: 10px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -89,7 +88,7 @@ if not st.session_state.logged_in:
                 st.rerun()
             else: st.error("⚠️ Tài khoản hoặc mã bảo mật không chính xác!")
 
-# --- MÀN HÌNH CHÍNH ---
+# --- MÀN HÌNH CHÍNH MẠNG NỘI BỘ ---
 else:
     st.markdown(f"""
         <div class="banner-container"><div class="banner-title">FTO WEPD</div><div class="banner-subtitle">WESTSIDE POLICE DEPARTMENT - HỆ THỐNG SÁT HẠCH</div></div>
@@ -110,7 +109,7 @@ else:
     if st.session_state.user_role in ["Quản trị viên", "Giảng viên"]:
         tab_users, tab_add_q, tab_results = st.tabs([
             "👥 QUẢN LÝ THÀNH VIÊN", 
-            "📝 TỰ BIÊN SOẠN CÂU HỎI", 
+            "¼ TỰ BIÊN SOẠN CÂU HỎI", 
             "📊 THỐNG KÊ ĐIỂM SỐ"
         ])
         
@@ -159,13 +158,14 @@ else:
                     st.success("Đã lưu câu hỏi thành công!")
                     st.rerun()
 
-            # --- ĐÃ THÊM: MỤC XEM VÀ XÓA CÂU HỎI NGAY PHÍA DƯỚI TAB SOẠN ---
+            # --- SỬA LỖI TẠI ĐÂY: Hiển thị danh sách và nút xóa bằng giao diện hộp chuẩn an toàn ---
             st.divider()
             st.markdown("### 📋 DANH SÁCH & XÓA CÂU HỎI TRONG ĐỀ")
             if len(st.session_state.questions_db) == 0:
                 st.caption("Chưa có câu hỏi nào trong hệ thống.")
             else:
                 for idx, q_item in enumerate(st.session_state.questions_db):
-                    # Thiết kế thẻ hiển thị thông tin câu hỏi
-                    st.markdown(f"""
-                        <div class='q-list-card'>
+                    with st.expander(f"📦 Mã số câu {idx+1} ({q_item['type']}) - Click để xem chi tiết"):
+                        st.write(f"**Câu hỏi:** {q_item['question']}")
+                        st.write(f"**Đáp án đúng:** {q_item['answer']}")
+                        st.write(f"**Giải thích:** {q_item.get('explain', 'Không có')}")
