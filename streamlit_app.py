@@ -7,7 +7,6 @@ from datetime import datetime
 # =========================================================================
 # 1. KHỞI TẠO CƠ SỞ DỮ LIỆU BAN ĐẦU TRONG BỘ NHỚ HỆ THỐNG
 # =========================================================================
-# Ngân hàng thông báo mặc định ở trang chủ
 if 'announcements_db' not in st.session_state:
     st.session_state.announcements_db = [
         {"Ngay": "05/03/2026", "TieuDe": "Tranh thủ thời gian học", "NoiDung": "Khi không có giảng viên, các Sĩ quan vui lòng tự học trên web nha."},
@@ -15,7 +14,6 @@ if 'announcements_db' not in st.session_state:
         {"Ngay": "24/07/2026", "TieuDe": "Giấy phép cư dân", "NoiDung": "CCCD đang bị lỗi nên học viên yêu cầu cư dân xuất trình nếu không có thì không phạt. GPLX và giấy tờ xe không bị lỗi học viên yêu cầu cư dân xuất trình."}
     ]
 
-# Ngân hàng câu hỏi trắc nghiệm dạng ma trận bảng tính (Có sẵn các câu hỏi thực tế của bạn)
 if 'questions_db' not in st.session_state:
     st.session_state.questions_db = [
         {
@@ -35,37 +33,17 @@ if 'questions_db' not in st.session_state:
             "DapAnDung": "6",
             "GiaiThich": "Quy tắc an toàn vũ lực yêu cầu số lượng áp đảo tối thiểu là 6 người chống lại 2 người có súng.",
             "PhanLoai": "Mục thi & Ôn tập"
-        },
-        {
-            "CauHoi": "Số người tối thiểu có thể trấn áp 02 PD không có súng là bao nhiêu?",
-            "A": "4",
-            "B": "2",
-            "C": "6",
-            "DapAnDung": "4",
-            "GiaiThich": "Khi đối phương không có súng, số lượng tối thiểu được giảm xuống còn 4 người.",
-            "PhanLoai": "Mục thi & Ôn tập"
-        },
-        {
-            "CauHoi": "Mức độ ưu tiên nhận Dispatch",
-            "A": "Buôn Lậu Tranh",
-            "B": "Cướp cửa hàng tiện lợi",
-            "C": "Trộm cắp xe máy",
-            "DapAnDung": "Buôn Lậu Tranh",
-            "GiaiThich": "Buôn lậu tranh thuộc danh mục tội phạm nghiêm trọng cấp độ cao cần ưu tiên dispatch.",
-            "PhanLoai": "Mục thi & Ôn tập"
         }
     ]
 
-# Danh sách tài khoản người dùng và trạng thái cho phép làm bài thi
 if 'users_db' not in st.session_state:
     st.session_state.users_db = {
         "admin": {"pass": "admin123", "role": "Quản trị viên", "can_exam": True},
         "GIANGVIEN": {"pass": "123456", "role": "Giảng viên", "can_exam": True},
-        "2229": {"pass": "123456", "role": "Học viên", "can_exam": True},  # Đã mở sẵn quyền thi cho nick trong ảnh của bạn
+        "2229": {"pass": "123456", "role": "Học viên", "can_exam": True},
         "S-01": {"pass": "123456", "role": "Học viên", "can_exam": False}
     }
 
-# Các biến logic quản lý trạng thái thi và kết quả
 if 'exam_results' not in st.session_state: st.session_state.exam_results = []
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'username' not in st.session_state: st.session_state.username = ""
@@ -78,7 +56,7 @@ if 'start_time' not in st.session_state: st.session_state.start_time = None
 if 'shuffled_exam_qs' not in st.session_state: st.session_state.shuffled_exam_qs = []
 
 # =========================================================================
-# GIAO DIỆN VÀ STYLE ĐỒ HỌA CHUẨN ĐẸP
+# GIAO DIỆN VÀ STYLE CSS ĐỒ HỌA
 # =========================================================================
 st.set_page_config(page_title="FTO WEPD - Hệ Thống Sát Hạch", page_icon="🚓", layout="centered")
 
@@ -99,6 +77,7 @@ st.markdown("""
     .noti-flat-body { font-size: 13px; color: #334155; line-height: 1.6; }
     .timer-text { font-size: 24px; font-weight: bold; color: #ef4444; text-align: center; background-color: #fee2e2; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
     .explain-box { background-color: #fffbeb; border-left: 5px solid #d97706; padding: 12px; margin-top: 5px; border-radius: 4px; color: #92400e; font-size: 14px; }
+    .q-box-custom { background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
     div.stButton > button { background-color: #0b1e36 !important; color: white !important; font-weight: bold !important; border-radius: 4px !important; border: none !important; }
     </style>
 """, unsafe_allow_html=True)
@@ -129,7 +108,7 @@ if not st.session_state.logged_in:
                 st.rerun()
             else: st.error("⚠️ Tài khoản hoặc mã bảo mật không đúng!")
 
-# --- MÀN HÌNH CHÍNH SAU KHI ĐĂNG NHẬP THÀNH CÔNG ---
+# --- MÀN HÌNH CHÍNH BIÊN CHẾ ---
 else:
     st.markdown("""
         <div class="banner-graphic">
@@ -149,10 +128,9 @@ else:
             st.session_state.shuffled_exam_qs = []
             st.rerun()
 
-    # --- PHÂN CHIA MENU THEO CHỨC VỤ ĐĂNG NHẬP ---
-    # A. GIAO DIỆN QUẢN LÝ (Admin / Giảng viên)
+    # --- LUỒNG QUẢN LÝ (Admin / Giảng viên) ---
     if st.session_state.user_role in ["Quản trị viên", "Giảng viên"]:
-        tab_users, tab_edit_matrix, tab_results, tab_news_manage = st.tabs([
+        tab_users, tab_edit_forms, tab_results, tab_news_manage = st.tabs([
             "👥 QUẢN LÝ THÀNH VIÊN", 
             "⚙️ NGÂN HÀNG CÂU HỎI TRẮC NGHIỆM", 
             "📊 THỐNG KÊ ĐIỂM SỐ",
@@ -175,3 +153,19 @@ else:
                 if data["role"] == "Học viên":
                     col_u, col_chk = st.columns(2)
                     with col_u: st.write(f"• **{user}** (Mật khẩu: `{data['pass']}`)")
+                    with col_chk:
+                        status = st.checkbox("Cấp quyền thi chính thức", value=data["can_exam"], key=f"p_check_{user}")
+                        if status != data["can_exam"]:
+                            st.session_state.users_db[user]["can_exam"] = status
+                            st.toast(f"Đã cập nhật quyền thi cho {user}!")
+
+        # --- ĐÃ SỬA ĐỔI TOÀN DIỆN THÀNH Ô NHẬP LIỆU KHÔNG LO BỊ LỖI TRẮNG MÀN HÌNH ---
+        with tab_edit_forms:
+            st.markdown("### 📝 Soạn Thảo Câu Hỏi Trắc Nghiệm Mới")
+            current_exam_q_count = len([q for q in st.session_state.questions_db if q.get("PhanLoai", "Mục thi & Ôn tập") == "Mục thi & Ôn tập"])
+            st.info(f"Số lượng câu hỏi phục vụ đề thi hiện tại: **{current_exam_q_count}** câu.")
+            
+            q_text = st.text_area("Nội dung câu hỏi:", key="new_q_text")
+            o1 = st.text_input("Phương án A:", key="new_o1")
+            o2 = st.text_input("Phương án B:", key="new_o2")
+            o3 = st.text_input("Phương án C:", key="new_o3")
