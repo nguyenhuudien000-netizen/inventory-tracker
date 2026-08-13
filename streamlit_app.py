@@ -5,7 +5,7 @@ import random
 from datetime import datetime
 
 # =========================================================================
-# 1. KHỞI TẠO CƠ SỞ DỮ LIỆU CÂU HỎI MẪU CHUẨN ĐỊNH DẠNG BẢNG
+# 1. KHỞI TẠO CƠ SỞ DỮ LIỆU CÂU HỎI MẪU
 # =========================================================================
 if 'questions_db' not in st.session_state:
     st.session_state.questions_db = [
@@ -87,15 +87,7 @@ st.markdown("""
     .logo-circle { background-color: #ffcc00; color: #0b1e36; width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 18px; margin: 0 auto 15px auto; }
     .timer-text { font-size: 24px; font-weight: bold; color: #ef4444; text-align: center; background-color: #fee2e2; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
     .explain-box { background-color: #fffbeb; border-left: 5px solid #d97706; padding: 12px; margin-top: 5px; border-radius: 4px; color: #92400e; font-size: 14px; }
-    
-    /* Màu nút lưu câu hỏi */
-    div.stButton > button {
-        background-color: #0c2340 !important;
-        color: white !important;
-        font-weight: bold !important;
-        padding: 10px 24px !important;
-        border-radius: 6px !important;
-    }
+    div.stButton > button { background-color: #0c2340 !important; color: white !important; font-weight: bold !important; padding: 10px 24px !important; border-radius: 6px !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -177,14 +169,14 @@ else:
             st.markdown("### ⚙️ BẢNG QUẢN TRỊ NGÂN HÀNG ĐỀ THI")
             st.caption("💡 Hướng dẫn: Nhấp đúp chuột vào bất kỳ ô nào để chỉnh sửa trực tiếp. Để THÊM câu hỏi mới, hãy cuộn xuống dòng dưới cùng của bảng để nhập.")
             
-            # CHUYỂN ĐỔI CHUẨN ĐỊNH DẠNG DATAFRAME
             df_questions = pd.DataFrame(st.session_state.questions_db)
-            
-            # Ép kiểu dữ liệu text để bảng hiển thị các ô nhập liệu rỗng chính xác
             for col in ["CauHoi", "A", "B", "C", "DapAnDung", "GiaiThich", "PhanLoai"]:
                 if col in df_questions.columns:
                     df_questions[col] = df_questions[col].astype(str)
 
-            # CẤU HÌNH MA TRẬN BẢNG CHUẨN AN TOÀN KHÔNG BỊ TRẮNG TINH
+            # ĐÃ SỬA LỖI ĐÓNG NGOẶC: Đảm bảo đóng ngoặc đơn tròn chuẩn cú pháp Python
             edited_df = st.data_editor(
-            
+                df_questions,
+                use_container_width=True,
+                num_rows="dynamic",
+                column_config={
