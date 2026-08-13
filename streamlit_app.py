@@ -98,7 +98,76 @@ else:
     with info_col:
         st.markdown(f"<div class='user-info-bar'>👤 Tài khoản: <b>{st.session_state.username}</b> | Chức vụ: <span style='color:#3b82f6;'><b>{st.session_state.user_role}</b></span></div>", unsafe_allow_html=True)
     with btn_col:
-... (Còn74 dòng dòng)
+        if st.button("ĐĂNG XUẤT", use_container_width=True, type="secondary"):
+            st.session_state.logged_in = False
+            st.session_state.username = ""
+            st.session_state.exam_submitted = False
+            st.session_state.shuffled_exam_qs = []
+            st.rerun()
 
-message.txt
-11 KB
+    # --- LUỒNG QUẢN LÝ (ADMIN / GIẢNG VIÊN) ---
+    if st.session_state.user_role in ["Quản trị viên", "Giảng viên"]:
+        tab_users, tab_add_q, tab_results = st.tabs(["👥 QUẢN LÝ THÀNH VIÊN", "📝 TỰ BIÊN SOẠN CÂU HỎI", "📊 THỐNG KÊ ĐIỂM SỐ"])
+        
+        with tab_users:
+            st.markdown("### ➕ Thêm Tài Khoản Mới")
+            c1, c2, c3 = st.columns(3)
+            with c1: new_u = st.text_input("Username mới:", key="add_u")
+            with c2: new_p = st.text_input("Mật khẩu:", type="password", key="add_p")
+            with c3: new_r = st.selectbox("Chức vụ:", ["Học viên", "Giảng viên"], key="add_r")
+            if st.button("Xác nhận thêm người dùng", type="primary"):
+                if new_u and new_p:
+                    st.session_state.users_db[new_u] = {"pass": new_p, "role": new_r, "can_exam": False}
+                    st.success(f"Đã thêm tài khoản: {new_u}")
+                    st.rerun()
+            st.divider()
+            for user, data in st.session_state.users_db.items():
+                if data["role"] == "Học viên":
+                    col_u, col_status = st.columns(2)
+                    with col_u: st.write(f"• **{user}** (Mật khẩu: {data['pass']})")
+                    with col_status:
+                        current_status = st.checkbox("Cho phép thi", value=data["can_exam"], key=f"perm_{user}")
+                        if current_status != data["can_exam"]:
+                            st.session_state.users_db[user]["can_exam"] = current_status
+                            st.toast(f"Đã cập nhật quyền thi cho {user}!")
+        
+        with tab_add_q:
+            st.markdown("### 📝 Soạn Thảo Câu Hỏi Trắc Nghiệm Mới")
+            current_exam_q_count = len([q for q in st.session_state.questions_db if q["type"] == "Mục thi & Ôn tập"])
+            st.info(f"Số lượng câu hỏi trong danh mục đề thi hiện tại: **{current_exam_q_count} / 30** câu.")
+            q_text = st.text_area("Nội dung câu hỏi:")
+            o1 = st.text_input("Phương án A:")
+            o2 = st.text_input("Phương án B:")
+            o3 = st.text_input("Phương án C:")
+            q_ans = st.selectbox("Lựa chọn phương án đúng nhất:", [o1, o2, o3])
+            
+            # ĐÃ THÊM: Ô nhập liệu nội dung giải thích đáp án dành cho Admin
+            q_explain = st.text_area("Giải thích đáp án (Hiển thị khi học viên trả lời sai):", placeholder="Ví dụ: Dựa theo Điều 5 Luật giao thông đường bộ...")
+            
+            q_type = st.radio("Phân loại danh mục:", ["Mục thi & Ôn tập", "Mục ôn tập"])
+            if st.button("Lưu câu hỏi vào ngân hàng đề", type="primary"):
+                if q_text and o1 and o2 and o3:
+                    st.session_state.questions_db.append({
+                        "id": len(st.session_state.questions_db) + 1, 
+                        "question": q_text, 
+                        "options": [o1, o2, o3], 
+                        "answer": q_ans, 
+                        "explain": q_explain if q_explain else "Không có phần giải thích cho câu hỏi này.",
+                        "type": q_type
+                    })
+                    st.success("Đã lưu câu hỏi thành công!")
+                    st.rerun()
+
+        with tab_results:
+            st.markdown("### 📊 Kết Quả Kiểm Tra Chi Tiết")
+            if len(st.session_state.exam_results) == 0: st.info("Chưa có dữ liệu thi nào.")
+            else:
+                df_res = pd.DataFrame(st.session_state.exam_results)
+                st.dataframe(df_res[["Thời Gian", "Sĩ Quan", "Số Câu Đúng", "Tổng Số Câu", "Tỷ Lệ", "Kết Quả"]], use_container_width=True, hide_index=True)
+
+    # --- LUỒNG HỌC VIÊN ---
+    else:
+        tab_practice, tab_exam = st.tabs(["📚 MỤC ĐỀ ÔN LUYỆN", "✍️ BÀI THI CHÍNH THỨC (25s / Câu)"])
+        
+        with tab_practice:
+            st.markdown("### Đề Ôn Luyện Kiến Thức (Tự do ôn tập)")
