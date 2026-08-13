@@ -4,7 +4,7 @@ import random
 from datetime import datetime
 
 # =========================================================================
-# 1. NGÂN HÀNG ĐỀ THI GỐC (ĐÃ NẠP SẴN 10 CÂU HỎI THỰC TẾ CỦA BẠN - LƯU VĨNH VIỄN)
+# 1. NGÂN HÀNG ĐỀ THI GỐC (ĐÃ NẠP SẴN 10 CÂU HỎI THỰC TẾ)
 # =========================================================================
 if 'questions_db' not in st.session_state:
     st.session_state.questions_db = [
@@ -146,8 +146,7 @@ else:
                     st.rerun()
             st.divider()
             st.markdown("### 🔐 Danh sách cấp quyền thi")
+            # ĐÃ ĐỒNG BỘ GỘP DÒNG: Loại bỏ hoàn toàn khối st.columns dễ gây lệch hàng tụt dòng trên GitHub
             for user, data in st.session_state.users_db.items():
                 if data["role"] == "Học viên":
-                    col_u, col_chk = st.columns(2)
-                    with col_u: st.write(f"• **{user}** (Mật khẩu: `{data['pass']}`)")
-                    with col_chk:
+                    status = st.checkbox(f"Mở khóa đề thi cho sĩ quan: {user} (Mật khẩu: {data['pass']})", value=data["can_exam"], key=f"perm_lock_{user}")
