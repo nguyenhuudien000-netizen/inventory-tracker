@@ -21,6 +21,7 @@ if 'questions_db' not in st.session_state:
             "question": "Khi gặp tín hiệu đèn vàng nhấp nháy, bạn phải xử lý như thế nào?",
             "options": ["Dừng lại trước vạch dừng.", "Đi tiếp nhưng giảm tốc độ, chú ý quan sát.", "Tăng tốc vượt qua."],
             "answer": "Đi tiếp nhưng giảm tốc độ, chú ý quan sát.",
+            "explain": "Theo luật giao thông đường bộ WEPD, đèn vàng nhấp nháy báo hiệu được đi nhưng phải giảm tốc độ và chú ý quan sát an toàn.",
             "type": "Mục thi & Ôn tập"
         }
     ]
@@ -31,7 +32,6 @@ if 'username' not in st.session_state: st.session_state.username = ""
 if 'user_role' not in st.session_state: st.session_state.user_role = ""
 if 'exam_submitted' not in st.session_state: st.session_state.exam_submitted = False
 
-# Biến phục vụ đếm thời gian, làm từng câu một và xáo trộn đề
 if 'current_q_index' not in st.session_state: st.session_state.current_q_index = 0
 if 'user_exam_answers' not in st.session_state: st.session_state.user_exam_answers = {}
 if 'start_time' not in st.session_state: st.session_state.start_time = None
@@ -57,6 +57,7 @@ st.markdown("""
     .login-header { background-color: #0b1e36; color: white; padding: 30px 20px; border-radius: 10px 10px 0 0; margin: -40px -40px 30px -40px; }
     .logo-circle { background-color: #ffcc00; color: #0b1e36; width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 18px; margin: 0 auto 15px auto; }
     .timer-text { font-size: 24px; font-weight: bold; color: #ef4444; text-align: center; background-color: #fee2e2; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
+    .explain-box { background-color: #fffbeb; border-left: 5px solid #d97706; padding: 12px; margin-top: 5px; border-radius: 4px; color: #92400e; font-size: 14px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -83,7 +84,7 @@ if not st.session_state.logged_in:
                 st.session_state.username = input_user
                 st.session_state.user_role = st.session_state.users_db[input_user]["role"]
                 st.session_state.exam_submitted = False
-                st.session_state.shuffled_exam_qs = []  # Reset danh sách xáo trộn đề cũ
+                st.session_state.shuffled_exam_qs = []
                 st.rerun()
             else: st.error("⚠️ Tài khoản hoặc mã bảo mật không chính xác!")
 
@@ -139,10 +140,21 @@ else:
             o2 = st.text_input("Phương án B:")
             o3 = st.text_input("Phương án C:")
             q_ans = st.selectbox("Lựa chọn phương án đúng nhất:", [o1, o2, o3])
+            
+            # ĐÃ THÊM: Ô nhập liệu nội dung giải thích đáp án dành cho Admin
+            q_explain = st.text_area("Giải thích đáp án (Hiển thị khi học viên trả lời sai):", placeholder="Ví dụ: Dựa theo Điều 5 Luật giao thông đường bộ...")
+            
             q_type = st.radio("Phân loại danh mục:", ["Mục thi & Ôn tập", "Mục ôn tập"])
             if st.button("Lưu câu hỏi vào ngân hàng đề", type="primary"):
                 if q_text and o1 and o2 and o3:
-                    st.session_state.questions_db.append({"id": len(st.session_state.questions_db) + 1, "question": q_text, "options": [o1, o2, o3], "answer": q_ans, "type": q_type})
+                    st.session_state.questions_db.append({
+                        "id": len(st.session_state.questions_db) + 1, 
+                        "question": q_text, 
+                        "options": [o1, o2, o3], 
+                        "answer": q_ans, 
+                        "explain": q_explain if q_explain else "Không có phần giải thích cho câu hỏi này.",
+                        "type": q_type
+                    })
                     st.success("Đã lưu câu hỏi thành công!")
                     st.rerun()
 
@@ -158,17 +170,4 @@ else:
         tab_practice, tab_exam = st.tabs(["📚 MỤC ĐỀ ÔN LUYỆN", "✍️ BÀI THI CHÍNH THỨC (25s / Câu)"])
         
         with tab_practice:
-            st.markdown("### Đề Ôn Luyện Kiến Thức (Không xáo trộn - Tự do ôn tập)")
-            practice_qs = st.session_state.questions_db
-            p_answers = {}
-            for idx, item in enumerate(practice_qs):
-                st.markdown(f"**Câu {idx+1}: {item['question']}**")
-                p_answers[idx] = st.radio("Chọn phương án:", item["options"], key=f"pract_{item['id']}")
-            if st.button("Kiểm tra đáp án nhanh"):
-                correct = 0
-                for idx, item in enumerate(practice_qs):
-                    if p_answers[idx] == item["answer"]: correct += 1
-                st.success(f"Kết quả ôn tập: Đúng {correct}/{len(practice_qs)} câu.")
-
-        with tab_exam:
-            st.markdown("### Đề Thi Sát Hạch Chính Thức (Xáo trộn câu hỏi & 100% Đạt)")
+            st.markdown("### Đề Ôn Luyện Kiến Thức (Tự do ôn tập)")
