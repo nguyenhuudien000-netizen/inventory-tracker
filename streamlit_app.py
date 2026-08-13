@@ -58,6 +58,7 @@ st.markdown("""
     .logo-circle { background-color: #ffcc00; color: #0b1e36; width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 18px; margin: 0 auto 15px auto; }
     .timer-text { font-size: 24px; font-weight: bold; color: #ef4444; text-align: center; background-color: #fee2e2; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
     .explain-box { background-color: #fffbeb; border-left: 5px solid #d97706; padding: 12px; margin-top: 5px; border-radius: 4px; color: #92400e; font-size: 14px; }
+    .q-list-card { background-color: #f8fafc; border-left: 5px solid #64748b; padding: 15px; border-radius: 6px; margin-bottom: 10px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -107,7 +108,11 @@ else:
 
     # --- LUỒNG QUẢN LÝ (ADMIN / GIẢNG VIÊN) ---
     if st.session_state.user_role in ["Quản trị viên", "Giảng viên"]:
-        tab_users, tab_add_q, tab_results = st.tabs(["👥 QUẢN LÝ THÀNH VIÊN", "📝 TỰ BIÊN SOẠN CÂU HỎI", "📊 THỐNG KÊ ĐIỂM SỐ"])
+        tab_users, tab_add_q, tab_results = st.tabs([
+            "👥 QUẢN LÝ THÀNH VIÊN", 
+            "📝 TỰ BIÊN SOẠN CÂU HỎI", 
+            "📊 THỐNG KÊ ĐIỂM SỐ"
+        ])
         
         with tab_users:
             st.markdown("### ➕ Thêm Tài Khoản Mới")
@@ -135,39 +140,32 @@ else:
             st.markdown("### 📝 Soạn Thảo Câu Hỏi Trắc Nghiệm Mới")
             current_exam_q_count = len([q for q in st.session_state.questions_db if q["type"] == "Mục thi & Ôn tập"])
             st.info(f"Số lượng câu hỏi trong danh mục đề thi hiện tại: **{current_exam_q_count} / 30** câu.")
-            q_text = st.text_area("Nội dung câu hỏi:")
-            o1 = st.text_input("Phương án A:")
-            o2 = st.text_input("Phương án B:")
-            o3 = st.text_input("Phương án C:")
-            q_ans = st.selectbox("Lựa chọn phương án đúng nhất:", [o1, o2, o3])
+            q_text = st.text_area("Nội dung câu hỏi:", key="new_q_text")
+            o1 = st.text_input("Phương án A:", key="new_o1")
+            o2 = st.text_input("Phương án B:", key="new_o2")
+            o3 = st.text_input("Phương án C:", key="new_o3")
             
-            # ĐÃ THÊM: Ô nhập liệu nội dung giải thích đáp án dành cho Admin
-            q_explain = st.text_area("Giải thích đáp án (Hiển thị khi học viên trả lời sai):", placeholder="Ví dụ: Dựa theo Điều 5 Luật giao thông đường bộ...")
+            q_ans = st.selectbox("Lựa chọn phương án đúng nhất:", [o1, o2, o3], key="new_q_ans")
+            q_explain = st.text_area("Giải thích đáp án (Hiển thị khi học viên trả lời sai):", placeholder="Nhập căn cứ pháp lý...", key="new_q_exp")
+            q_type = st.radio("Phân loại danh mục:", ["Mục thi & Ôn tập", "Mục ôn tập"], key="new_q_type")
             
-            q_type = st.radio("Phân loại danh mục:", ["Mục thi & Ôn tập", "Mục ôn tập"])
             if st.button("Lưu câu hỏi vào ngân hàng đề", type="primary"):
                 if q_text and o1 and o2 and o3:
                     st.session_state.questions_db.append({
-                        "id": len(st.session_state.questions_db) + 1, 
-                        "question": q_text, 
-                        "options": [o1, o2, o3], 
-                        "answer": q_ans, 
-                        "explain": q_explain if q_explain else "Không có phần giải thích cho câu hỏi này.",
-                        "type": q_type
+                        "id": int(time.time() + random.randint(1,100)),
+                        "question": q_text, "options": [o1, o2, o3], "answer": q_ans, 
+                        "explain": q_explain if q_explain else "Không có phần giải thích.", "type": q_type
                     })
                     st.success("Đã lưu câu hỏi thành công!")
                     st.rerun()
 
-        with tab_results:
-            st.markdown("### 📊 Kết Quả Kiểm Tra Chi Tiết")
-            if len(st.session_state.exam_results) == 0: st.info("Chưa có dữ liệu thi nào.")
+            # --- ĐÃ THÊM: MỤC XEM VÀ XÓA CÂU HỎI NGAY PHÍA DƯỚI TAB SOẠN ---
+            st.divider()
+            st.markdown("### 📋 DANH SÁCH & XÓA CÂU HỎI TRONG ĐỀ")
+            if len(st.session_state.questions_db) == 0:
+                st.caption("Chưa có câu hỏi nào trong hệ thống.")
             else:
-                df_res = pd.DataFrame(st.session_state.exam_results)
-                st.dataframe(df_res[["Thời Gian", "Sĩ Quan", "Số Câu Đúng", "Tổng Số Câu", "Tỷ Lệ", "Kết Quả"]], use_container_width=True, hide_index=True)
-
-    # --- LUỒNG HỌC VIÊN ---
-    else:
-        tab_practice, tab_exam = st.tabs(["📚 MỤC ĐỀ ÔN LUYỆN", "✍️ BÀI THI CHÍNH THỨC (25s / Câu)"])
-        
-        with tab_practice:
-            st.markdown("### Đề Ôn Luyện Kiến Thức (Tự do ôn tập)")
+                for idx, q_item in enumerate(st.session_state.questions_db):
+                    # Thiết kế thẻ hiển thị thông tin câu hỏi
+                    st.markdown(f"""
+                        <div class='q-list-card'>
