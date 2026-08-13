@@ -33,7 +33,6 @@ if 'questions_db' not in st.session_state:
             "explain": "Luật quy định phải nhường đường cho xe đang chạy trên đường chính trước khi nhập làn.",
             "type": "Mục thi & Ôn tập"
         }
-        # CÁCH THÊM CÂU: Bạn chỉ cần copy cụm dấu ngoặc nhọn từ { đến }, thêm dấu phẩy rồi dán xuống dưới để điền tiếp câu 4, câu 5... cho đủ 30 câu.
     ]
 
 # Khởi tạo cơ sở dữ liệu tài khoản và các trạng thái hệ thống
@@ -127,9 +126,11 @@ else:
 
     # --- LUỒNG QUẢN LÝ (ADMIN / GIẢNG VIÊN) ---
     if st.session_state.user_role in ["Quản trị viên", "Giảng viên"]:
-        tab_users, tab_add_q, tab_results = st.tabs([
+        # ĐÃ CẬP NHẬT: Tách riêng thành 4 Tab rõ ràng để không sợ bị khuất màn hình
+        tab_users, tab_add_q, tab_view_del, tab_results = st.tabs([
             "👥 QUẢN LÝ THÀNH VIÊN", 
             "📝 TỰ BIÊN SOẠN CÂU HỎI", 
+            "🗑️ XEM & XÓA CÂU HỎI",
             "📊 THỐNG KÊ ĐIỂM SỐ"
         ])
         
