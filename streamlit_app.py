@@ -14,26 +14,13 @@ if 'announcements_db' not in st.session_state:
         {"Ngay": "24/07/2026", "TieuDe": "Giấy phép cư dân", "NoiDung": "CCCD đang bị lỗi nên học viên yêu cầu cư dân xuất trình nếu không có thì không phạt. GPLX và giấy tờ xe không bị lỗi học viên yêu cầu cư dân xuất trình."}
     ]
 
+# Gá sẵn một số câu hỏi mẫu thực tế. Bạn có thể thêm vào đây hoặc gõ thêm trên giao diện web không giới hạn số lượng.
 if 'questions_db' not in st.session_state:
     st.session_state.questions_db = [
-        {
-            "CauHoi": "Xử lý đối tượng có nợ 5 hóa đơn (không thể ghi hóa đơn cho tội phạm) Trường hợp nào?",
-            "A": "Ra báo TTC, tố cáo tội phạm không chịu thanh toán",
-            "B": "Bỏ qua hóa đơn và tiếp tục xử lý",
-            "C": "Phạt tù thêm thời gian quy định",
-            "DapAnDung": "Ra báo TTC, tố cáo tội phạm không chịu thanh toán",
-            "GiaiThich": "Theo luật định, đối tượng nợ 5 hóa đơn cần được xử lý thông qua báo cáo TTC.",
-            "PhanLoai": "Mục thi & Ôn tập"
-        },
-        {
-            "CauHoi": "Số người tối thiểu có thể trấn áp 02 PD đang cầm súng là bao nhiêu?",
-            "A": "6",
-            "B": "4",
-            "C": "2",
-            "DapAnDung": "6",
-            "GiaiThich": "Quy tắc an toàn vũ lực yêu cầu số lượng áp đảo tối thiểu là 6 người chống lại 2 người có súng.",
-            "PhanLoai": "Mục thi & Ôn tập"
-        }
+        {"CauHoi": "Xử lý đối tượng có nợ 5 hóa đơn (không thể ghi hóa đơn cho tội phạm) Trường hợp nào?", "A": "Ra báo TTC, tố cáo tội phạm không chịu thanh toán", "B": "Bỏ qua hóa đơn và tiếp tục xử lý", "C": "Phạt tù thêm thời gian quy định", "DapAnDung": "Ra báo TTC, tố cáo tội phạm không chịu thanh toán", "GiaiThich": "Theo luật định, đối tượng nợ 5 hóa đơn cần được xử lý thông qua báo cáo TTC.", "PhanLoai": "Mục thi & Ôn tập"},
+        {"CauHoi": "Số người tối thiểu có thể trấn áp 02 PD đang cầm súng là bao nhiêu?", "A": "6", "B": "4", "C": "2", "DapAnDung": "6", "GiaiThich": "Quy tắc an toàn vũ lực yêu cầu số lượng áp đảo tối thiểu là 6 người chống lại 2 người có súng.", "PhanLoai": "Mục thi & Ôn tập"},
+        {"CauHoi": "Số người tối thiểu có thể trấn áp 02 PD không có súng là bao nhiêu?", "A": "4", "B": "2", "C": "6", "DapAnDung": "4", "GiaiThich": "Khi đối phương không có súng, số lượng tối thiểu được giảm xuống còn 4 người.", "PhanLoai": "Mục thi & Ôn tập"},
+        {"CauHoi": "Mức độ ưu tiên nhận Dispatch", "A": "Buôn Lậu Tranh", "B": "Cướp cửa hàng tiện lợi", "C": "Trộm cắp xe máy", "DapAnDung": "Buôn Lậu Tranh", "GiaiThich": "Buôn lậu tranh thuộc danh mục tội phạm nghiêm trọng cấp độ cao cần ưu tiên dispatch.", "PhanLoai": "Mục thi & Ôn tập"}
     ]
 
 if 'users_db' not in st.session_state:
@@ -77,7 +64,7 @@ st.markdown("""
     .noti-flat-body { font-size: 13px; color: #334155; line-height: 1.6; }
     .timer-text { font-size: 24px; font-weight: bold; color: #ef4444; text-align: center; background-color: #fee2e2; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
     .explain-box { background-color: #fffbeb; border-left: 5px solid #d97706; padding: 12px; margin-top: 5px; border-radius: 4px; color: #92400e; font-size: 14px; }
-    .q-box-custom { background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+    .score-card-custom { background-color: #ffffff; border-left: 5px solid #3b82f6; padding: 15px; border-radius: 6px; margin-bottom: 10px; box-shadow: 0px 2px 8px rgba(0,0,0,0.05); }
     div.stButton > button { background-color: #0b1e36 !important; color: white !important; font-weight: bold !important; border-radius: 4px !important; border: none !important; }
     </style>
 """, unsafe_allow_html=True)
@@ -159,13 +146,5 @@ else:
                             st.session_state.users_db[user]["can_exam"] = status
                             st.toast(f"Đã cập nhật quyền thi cho {user}!")
 
-        # --- ĐÃ SỬA ĐỔI TOÀN DIỆN THÀNH Ô NHẬP LIỆU KHÔNG LO BỊ LỖI TRẮNG MÀN HÌNH ---
         with tab_edit_forms:
-            st.markdown("### 📝 Soạn Thảo Câu Hỏi Trắc Nghiệm Mới")
-            current_exam_q_count = len([q for q in st.session_state.questions_db if q.get("PhanLoai", "Mục thi & Ôn tập") == "Mục thi & Ôn tập"])
-            st.info(f"Số lượng câu hỏi phục vụ đề thi hiện tại: **{current_exam_q_count}** câu.")
-            
-            q_text = st.text_area("Nội dung câu hỏi:", key="new_q_text")
-            o1 = st.text_input("Phương án A:", key="new_o1")
-            o2 = st.text_input("Phương án B:", key="new_o2")
-            o3 = st.text_input("Phương án C:", key="new_o3")
+            st.markdown("### 📝 Soạn Thảo Câu Hỏi Trắc Nghiệm Mới (Không giới hạn số lượng)")
