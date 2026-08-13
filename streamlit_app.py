@@ -58,6 +58,7 @@ st.markdown("""
     .logo-circle { background-color: #ffcc00; color: #0b1e36; width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 18px; margin: 0 auto 15px auto; }
     .timer-text { font-size: 24px; font-weight: bold; color: #ef4444; text-align: center; background-color: #fee2e2; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
     .explain-box { background-color: #fffbeb; border-left: 5px solid #d97706; padding: 12px; margin-top: 5px; border-radius: 4px; color: #92400e; font-size: 14px; }
+    .q-edit-card { background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin-bottom: 15px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -107,8 +108,14 @@ else:
 
     # --- LUỒNG QUẢN LÝ (ADMIN / GIẢNG VIÊN) ---
     if st.session_state.user_role in ["Quản trị viên", "Giảng viên"]:
-        tab_users, tab_add_q, tab_results = st.tabs(["👥 QUẢN LÝ THÀNH VIÊN", "📝 TỰ BIÊN SOẠN CÂU HỎI", "📊 THỐNG KÊ ĐIỂM SỐ"])
+        tab_users, tab_add_q, tab_edit_q, tab_results = st.tabs([
+            "👥 QUẢN LÝ THÀNH VIÊN", 
+            "➕ SOẠN CÂU HỎI MỚI", 
+            "📝 XEM & SỬA ĐỀ THI", 
+            "📊 THỐNG KÊ ĐIỂM SỐ"
+        ])
         
+        # TAB 1: QUẢN LÝ THÀNH VIÊN
         with tab_users:
             st.markdown("### ➕ Thêm Tài Khoản Mới")
             c1, c2, c3 = st.columns(3)
@@ -131,24 +138,24 @@ else:
                             st.session_state.users_db[user]["can_exam"] = current_status
                             st.toast(f"Đã cập nhật quyền thi cho {user}!")
         
+        # TAB 2: SOẠN CÂU HỎI MỚI
         with tab_add_q:
-            st.markdown("### 📝 Soạn Thảo Câu Hỏi Trắc Nghiệm Mới")
+            st.markdown("### ➕ Tạo Câu Hỏi Trắc Nghiệm")
             current_exam_q_count = len([q for q in st.session_state.questions_db if q["type"] == "Mục thi & Ôn tập"])
             st.info(f"Số lượng câu hỏi trong danh mục đề thi hiện tại: **{current_exam_q_count} / 30** câu.")
-            q_text = st.text_area("Nội dung câu hỏi:")
-            o1 = st.text_input("Phương án A:")
-            o2 = st.text_input("Phương án B:")
-            o3 = st.text_input("Phương án C:")
-            q_ans = st.selectbox("Lựa chọn phương án đúng nhất:", [o1, o2, o3])
+            q_text = st.text_area("Nội dung câu hỏi:", key="new_q_text")
+            o1 = st.text_input("Phương án A:", key="new_o1")
+            o2 = st.text_input("Phương án B:", key="new_o2")
+            o3 = st.text_input("Phương án C:", key="new_o3")
             
-            # ĐÃ THÊM: Ô nhập liệu nội dung giải thích đáp án dành cho Admin
-            q_explain = st.text_area("Giải thích đáp án (Hiển thị khi học viên trả lời sai):", placeholder="Ví dụ: Dựa theo Điều 5 Luật giao thông đường bộ...")
+            q_ans = st.selectbox("Lựa chọn phương án đúng nhất:", [o1, o2, o3], key="new_q_ans")
+            q_explain = st.text_area("Giải thích đáp án (Hiển thị khi học viên trả lời sai):", placeholder="Nhập căn cứ pháp lý lý thuyết...", key="new_q_exp")
+            q_type = st.radio("Phân loại danh mục:", ["Mục thi & Ôn tập", "Mục ôn tập"], key="new_q_type")
             
-            q_type = st.radio("Phân loại danh mục:", ["Mục thi & Ôn tập", "Mục ôn tập"])
             if st.button("Lưu câu hỏi vào ngân hàng đề", type="primary"):
                 if q_text and o1 and o2 and o3:
                     st.session_state.questions_db.append({
-                        "id": len(st.session_state.questions_db) + 1, 
+                        "id": int(time.time()), # Tạo ID duy nhất không trùng lặp
                         "question": q_text, 
                         "options": [o1, o2, o3], 
                         "answer": q_ans, 
@@ -158,16 +165,10 @@ else:
                     st.success("Đã lưu câu hỏi thành công!")
                     st.rerun()
 
-        with tab_results:
-            st.markdown("### 📊 Kết Quả Kiểm Tra Chi Tiết")
-            if len(st.session_state.exam_results) == 0: st.info("Chưa có dữ liệu thi nào.")
+        # --- ĐÃ THÊM TAB 3: XEM VÀ CHỈNH SỬA CÂU HỎI TRỰC TIẾP ---
+        with tab_edit_q:
+            st.markdown("### 📝 Quản Lý Danh Sách Đề Sách Câu Hỏi Hiện Tại")
+            
+            if len(st.session_state.questions_db) == 0:
+                st.warning("Ngân hàng đề trống! Vui lòng qua tab soạn câu hỏi để thêm mới.")
             else:
-                df_res = pd.DataFrame(st.session_state.exam_results)
-                st.dataframe(df_res[["Thời Gian", "Sĩ Quan", "Số Câu Đúng", "Tổng Số Câu", "Tỷ Lệ", "Kết Quả"]], use_container_width=True, hide_index=True)
-
-    # --- LUỒNG HỌC VIÊN ---
-    else:
-        tab_practice, tab_exam = st.tabs(["📚 MỤC ĐỀ ÔN LUYỆN", "✍️ BÀI THI CHÍNH THỨC (25s / Câu)"])
-        
-        with tab_practice:
-            st.markdown("### Đề Ôn Luyện Kiến Thức (Tự do ôn tập)")
