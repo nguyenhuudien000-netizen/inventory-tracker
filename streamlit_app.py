@@ -5,7 +5,7 @@ import random
 from datetime import datetime
 
 # =========================================================================
-# 1. NGÂN HÀNG CÂU HỎI GỐC CỐ ĐỊNH (Khởi tạo danh sách câu hỏi mẫu ban đầu)
+# 1. KHỞI TẠO CƠ SỞ DỮ LIỆU CÂU HỎI MẪU CHUẨN ĐỊNH DẠNG BẢNG
 # =========================================================================
 if 'questions_db' not in st.session_state:
     st.session_state.questions_db = [
@@ -88,8 +88,8 @@ st.markdown("""
     .timer-text { font-size: 24px; font-weight: bold; color: #ef4444; text-align: center; background-color: #fee2e2; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
     .explain-box { background-color: #fffbeb; border-left: 5px solid #d97706; padding: 12px; margin-top: 5px; border-radius: 4px; color: #92400e; font-size: 14px; }
     
-    /* Thiết kế nút bấm Lưu Câu Hỏi màu xanh thẫm chữ trắng */
-    .stButton > button {
+    /* Màu nút lưu câu hỏi */
+    div.stButton > button {
         background-color: #0c2340 !important;
         color: white !important;
         font-weight: bold !important;
@@ -136,7 +136,6 @@ else:
     with info_col:
         st.markdown(f"<div class='user-info-bar'>👤 Tài khoản: <b>{st.session_state.username}</b> | Chức vụ: <span style='color:#3b82f6;'><b>{st.session_state.user_role}</b></span></div>", unsafe_allow_html=True)
     with btn_col:
-        st.write("<style>div.stButton > button {background-color:#ef4444 !important; color:white !important; margin-top:5px;}</style>", unsafe_allow_html=True)
         if st.button("ĐĂNG XUẤT", use_container_width=True):
             st.session_state.logged_in = False
             st.session_state.username = ""
@@ -158,7 +157,7 @@ else:
             with c1: new_u = st.text_input("Username mới:", key="add_u")
             with c2: new_p = st.text_input("Mật khẩu:", type="password", key="add_p")
             with c3: new_r = st.selectbox("Chức vụ:", ["Học viên", "Giảng viên"], key="add_r")
-            if st.button("Xác nhận thêm người dùng", type="primary"):
+            if st.button("Xác nhận thêm người dùng", type="primary", key="btn_add_user_confirm"):
                 if new_u and new_p:
                     st.session_state.users_db[new_u] = {"pass": new_p, "role": new_r, "can_exam": False}
                     st.success(f"Đã thêm tài khoản: {new_u}")
@@ -174,10 +173,18 @@ else:
                             st.session_state.users_db[user]["can_exam"] = current_status
                             st.toast(f"Đã cập nhật quyền thi cho {user}!")
         
-        # --- ĐÃ THÊM: GIAO DIỆN BẢNG CHỈNH SỬA EXCEL CHUYÊN NGHIỆP Y HỆT TRONG ẢNH ---
         with tab_edit_matrix:
             st.markdown("### ⚙️ BẢNG QUẢN TRỊ NGÂN HÀNG ĐỀ THI")
             st.caption("💡 Hướng dẫn: Nhấp đúp chuột vào bất kỳ ô nào để chỉnh sửa trực tiếp. Để THÊM câu hỏi mới, hãy cuộn xuống dòng dưới cùng của bảng để nhập.")
             
-            # Chuyển đổi danh sách câu hỏi hiện tại thành dạng DataFrame bảng tính
+            # CHUYỂN ĐỔI CHUẨN ĐỊNH DẠNG DATAFRAME
             df_questions = pd.DataFrame(st.session_state.questions_db)
+            
+            # Ép kiểu dữ liệu text để bảng hiển thị các ô nhập liệu rỗng chính xác
+            for col in ["CauHoi", "A", "B", "C", "DapAnDung", "GiaiThich", "PhanLoai"]:
+                if col in df_questions.columns:
+                    df_questions[col] = df_questions[col].astype(str)
+
+            # CẤU HÌNH MA TRẬN BẢNG CHUẨN AN TOÀN KHÔNG BỊ TRẮNG TINH
+            edited_df = st.data_editor(
+            
