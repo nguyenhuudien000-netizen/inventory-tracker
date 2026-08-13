@@ -88,7 +88,7 @@ if not st.session_state.logged_in:
                 st.rerun()
             else: st.error("⚠️ Tài khoản hoặc mã bảo mật không chính xác!")
 
-# --- MÀN HÌNH CHÍNH MẠNG NỘI BỘ ---
+# --- MÀN HÌNH CHÍNH ---
 else:
     st.markdown(f"""
         <div class="banner-container"><div class="banner-title">FTO WEPD</div><div class="banner-subtitle">WESTSIDE POLICE DEPARTMENT - HỆ THỐNG SÁT HẠCH</div></div>
@@ -109,7 +109,7 @@ else:
     if st.session_state.user_role in ["Quản trị viên", "Giảng viên"]:
         tab_users, tab_add_q, tab_results = st.tabs([
             "👥 QUẢN LÝ THÀNH VIÊN", 
-            "¼ TỰ BIÊN SOẠN CÂU HỎI", 
+            "📝 TỰ BIÊN SOẠN CÂU HỎI", 
             "📊 THỐNG KÊ ĐIỂM SỐ"
         ])
         
@@ -158,7 +158,7 @@ else:
                     st.success("Đã lưu câu hỏi thành công!")
                     st.rerun()
 
-            # --- SỬA LỖI TẠI ĐÂY: Hiển thị danh sách và nút xóa bằng giao diện hộp chuẩn an toàn ---
+            # --- VỊ TRÍ ĐÃ ĐƯỢC TỐI ƯU CỰC KỲ DỄ BẤM KHÔNG LO BỊ ẨN ---
             st.divider()
             st.markdown("### 📋 DANH SÁCH & XÓA CÂU HỎI TRONG ĐỀ")
             if len(st.session_state.questions_db) == 0:
@@ -166,6 +166,5 @@ else:
             else:
                 for idx, q_item in enumerate(st.session_state.questions_db):
                     with st.expander(f"📦 Mã số câu {idx+1} ({q_item['type']}) - Click để xem chi tiết"):
-                        st.write(f"**Câu hỏi:** {q_item['question']}")
-                        st.write(f"**Đáp án đúng:** {q_item['answer']}")
-                        st.write(f"**Giải thích:** {q_item.get('explain', 'Không có')}")
+                        # Nút xóa đặt hẳn lên trên đầu để không bị khuất màn hình ngang [1]
+                        st.write("<style>div.stButton > button {background-color:#ef4444; color:white;}</style>", unsafe_allow_html=True)
