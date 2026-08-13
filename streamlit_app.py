@@ -4,7 +4,7 @@ import random
 from datetime import datetime
 
 # =========================================================================
-# 1. NGÂN HÀNG ĐỀ THI GỐC CỐ ĐỊNH (LƯU TRỮ VĨNH VIỄN)
+# 1. NGÂN HÀNG ĐỀ THI GỐC CỐ ĐỊNH (LƯU TRỮ VĨNH VIỄN 10 CÂU HỎI THỰC TẾ)
 # =========================================================================
 if 'questions_db' not in st.session_state:
     st.session_state.questions_db = [
@@ -60,7 +60,7 @@ if 'questions_db' not in st.session_state:
         }
     ]
 
-# Khởi tạo các thành phần lưu trữ nền tảng hệ thống
+# Khởi tạo dữ liệu người dùng mặc định
 if 'announcements_db' not in st.session_state:
     st.session_state.announcements_db = [
         {"Ngay": "05/03/2026", "TieuDe": "Tranh thủ thời gian học", "NoiDung": "Khi không có giảng viên, các Sĩ quan vui lòng tự học trên web nha."},
@@ -101,7 +101,7 @@ st.markdown("""
     .timer-text { font-size: 24px; font-weight: bold; color: #ef4444; text-align: center; background-color: #fee2e2; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
     .explain-box { background-color: #fffbeb; border-left: 5px solid #d97706; padding: 12px; color: #92400e; font-size: 14px; }
     .score-card-custom { background-color: #ffffff; border-left: 5px solid #3b82f6; padding: 15px; border-radius: 6px; margin-bottom: 10px; }
-    .admin-section-box { background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin-bottom: 25px; box-shadow: 0px 4px 6px rgba(0,0,0,0.02); }
+    .admin-section-box { background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin-bottom: 25px; }
     div.stButton > button { background-color: #0b1e36 !important; color: white !important; font-weight: bold !important; width: 100%; border-radius: 4px !important; }
     </style>
 """, unsafe_allow_html=True)
@@ -135,16 +135,19 @@ else:
     st.divider()
 
     # =========================================================================
-    # LUỒNG GIAO DIỆN QUẢN LÝ DÀNH CHO ADMIN / GIẢNG VIÊN (PHẲNG HÓA TUYỆT ĐỐI)
+    # LUỒNG GIAO DIỆN QUẢN LÝ DÀNH CHO ADMIN / GIẢNG VIÊN (MỞ SẴN TOÀN BỘ)
     # =========================================================================
     if st.session_state.user_role in ["Quản trị viên", "Giảng viên"]:
         st.subheader("🛠️ KHU VỰC ĐIỀU HÀNH CỦA BAN QUẢN TRỊ")
-        st.caption("Gợi ý: Tất cả các tính năng quản lý đã được mở sẵn bên dưới. Bạn chỉ cần cuộn chuột xuống để sử dụng.")
         
-        # PHÒNG 1: QUẢN LÝ THÀNH VIÊN
+        # PHÒNG 1: ĐĂNG KÝ HỌC VIÊN (ĐÃ PHẲNG HÓA GỘP DÒNG AN TOÀN TUYỆT ĐỐI)
         st.markdown("<div class='admin-section-box'>", unsafe_allow_html=True)
         st.markdown("#### 👥 1. Quản Lý Thành Viên & Duyệt Quyền Thi")
-        add_u = st.text_input("Nhập tên tài khoản học viên mới:", key="create_user_u")
-        add_p = st.text_input("Nhập mật khẩu cho tài khoản này:", type="password", key="create_user_p")
+        add_u = st.text_input("Nhập tên số phù hiệu học viên mới:", key="create_user_u")
+        add_p = st.text_input("Nhập mật khẩu cho tài khoản học viên:", type="password", key="create_user_p")
+        
         if st.button("➕ Xác nhận tạo tài khoản học viên", key="btn_confirm_user_add"):
-            if add_u and add_p:
+            if add_u != "" and add_p != "":
+                st.session_state.users_db[add_u] = {"pass": add_p, "role": "Học viên", "can_exam": False}
+                st.success(f"Đã thêm học viên: {add_u}")
+                st.rerun()
