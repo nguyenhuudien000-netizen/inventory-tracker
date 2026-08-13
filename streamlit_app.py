@@ -2,29 +2,58 @@ import streamlit as st
 import pandas as pd
 import time
 import random
+from datetime import datetime
 
 # =========================================================================
-# 1. KHỞI TẠO CƠ SỞ DỮ LIỆU BỘ NHỚ
+# 1. NGÂN HÀNG CÂU HỎI GỐC CỐ ĐỊNH (Khởi tạo danh sách câu hỏi mẫu ban đầu)
 # =========================================================================
+if 'questions_db' not in st.session_state:
+    st.session_state.questions_db = [
+        {
+            "CauHoi": "Xử lý đối tượng có nợ 5 hóa đơn (không thể ghi hóa đơn cho tội phạm) Trường hợp nào?",
+            "A": "Ra báo TTC, tố cáo tội phạm không chịu thanh toán",
+            "B": "Bỏ qua hóa đơn và tiếp tục xử lý",
+            "C": "Phạt tù thêm thời gian quy định",
+            "DapAnDung": "Ra báo TTC, tố cáo tội phạm không chịu thanh toán",
+            "GiaiThich": "Theo luật định, đối tượng nợ 5 hóa đơn cần được xử lý thông qua báo cáo TTC.",
+            "PhanLoai": "Mục thi & Ôn tập"
+        },
+        {
+            "CauHoi": "Số người tối thiểu có thể trấn áp 02 PD đang cầm súng là bao nhiêu?",
+            "A": "6",
+            "B": "4",
+            "C": "2",
+            "DapAnDung": "6",
+            "GiaiThich": "Quy tắc an toàn vũ lực yêu cầu số lượng áp đảo tối thiểu là 6 người chống lại 2 người có súng.",
+            "PhanLoai": "Mục thi & Ôn tập"
+        },
+        {
+            "CauHoi": "Số người tối thiểu có thể trấn áp 02 PD không có súng là bao nhiêu?",
+            "A": "4",
+            "B": "2",
+            "C": "6",
+            "DapAnDung": "4",
+            "GiaiThich": "Khi đối phương không có súng, số lượng tối thiểu được giảm xuống còn 4 người.",
+            "PhanLoai": "Mục thi & Ôn tập"
+        },
+        {
+            "CauHoi": "Mức độ ưu tiên nhận Dispatch",
+            "A": "Buôn Lậu Tranh",
+            "B": "Cướp cửa hàng tiện lợi",
+            "C": "Trộm cắp xe máy",
+            "DapAnDung": "Buôn Lậu Tranh",
+            "GiaiThich": "Buôn lậu tranh thuộc danh mục tội phạm nghiêm trọng cấp độ cao cần ưu tiên dispatch.",
+            "PhanLoai": "Mục thi & Ôn tập"
+        }
+    ]
+
+# Khởi tạo cơ sở dữ liệu tài khoản và các trạng thái hệ thống
 if 'users_db' not in st.session_state:
     st.session_state.users_db = {
         "admin": {"pass": "admin123", "role": "Quản trị viên", "can_exam": True},
         "GIANGVIEN": {"pass": "123456", "role": "Giảng viên", "can_exam": True},
-        "S-01": {"pass": "123456", "role": "Học viên", "can_exam": False},
-        "HocVien02": {"pass": "123456", "role": "Học viên", "can_exam": False}
+        "S-01": {"pass": "123456", "role": "Học viên", "can_exam": False}
     }
-
-if 'questions_db' not in st.session_state:
-    st.session_state.questions_db = [
-        {
-            "id": 1,
-            "question": "Khi gặp tín hiệu đèn vàng nhấp nháy, bạn phải xử lý như thế nào?",
-            "options": ["Dừng lại trước vạch dừng.", "Đi tiếp nhưng giảm tốc độ, chú ý quan sát.", "Tăng tốc vượt qua."],
-            "answer": "Đi tiếp nhưng giảm tốc độ, chú ý quan sát.",
-            "explain": "Theo luật giao thông đường bộ WEPD, đèn vàng nhấp nháy báo hiệu được đi nhưng phải giảm tốc độ và chú ý quan sát an toàn.",
-            "type": "Mục thi & Ôn tập"
-        }
-    ]
 
 if 'exam_results' not in st.session_state: st.session_state.exam_results = []
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
@@ -40,7 +69,7 @@ if 'shuffled_exam_qs' not in st.session_state: st.session_state.shuffled_exam_qs
 # =========================================================================
 # GIAO DIỆN & STYLE CSS
 # =========================================================================
-st.set_page_config(page_title="FTO WEPD - Hệ Thống Quản Lý Sát Hạch", page_icon="🚓", layout="wide")
+st.set_page_config(page_title="FTO WEPD - Hệ Thống Sát Hạch Lý Thuyết", page_icon="🚓", layout="wide")
 
 st.markdown("""
     <style>
@@ -50,14 +79,23 @@ st.markdown("""
         border-radius: 12px; padding: 25px; text-align: center; color: white;
         border: 2px solid #324d77; margin-bottom: 20px;
     }
-    .banner-title { font-size: 48px; font-weight: 900; letter-spacing: 2px; margin-bottom: 0px; font-family: sans-serif; }
-    .banner-subtitle { font-size: 16px; color: #a0aec0; letter-spacing: 3px; }
+    .banner-title { font-size: 42px; font-weight: 900; letter-spacing: 2px; margin-bottom: 0px; font-family: sans-serif; }
+    .banner-subtitle { font-size: 15px; color: #a0aec0; letter-spacing: 3px; }
     .user-info-bar { background-color: #051329; border-radius: 8px; padding: 12px 20px; margin-bottom: 25px; border-left: 5px solid #ffcc00; color: white;}
     .login-box { background-color: #ffffff; padding: 40px; border-radius: 12px; box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.08); width: 450px; margin: 50px auto; text-align: center; }
     .login-header { background-color: #0b1e36; color: white; padding: 30px 20px; border-radius: 10px 10px 0 0; margin: -40px -40px 30px -40px; }
     .logo-circle { background-color: #ffcc00; color: #0b1e36; width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 18px; margin: 0 auto 15px auto; }
     .timer-text { font-size: 24px; font-weight: bold; color: #ef4444; text-align: center; background-color: #fee2e2; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
     .explain-box { background-color: #fffbeb; border-left: 5px solid #d97706; padding: 12px; margin-top: 5px; border-radius: 4px; color: #92400e; font-size: 14px; }
+    
+    /* Thiết kế nút bấm Lưu Câu Hỏi màu xanh thẫm chữ trắng */
+    .stButton > button {
+        background-color: #0c2340 !important;
+        color: white !important;
+        font-weight: bold !important;
+        padding: 10px 24px !important;
+        border-radius: 6px !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -98,7 +136,8 @@ else:
     with info_col:
         st.markdown(f"<div class='user-info-bar'>👤 Tài khoản: <b>{st.session_state.username}</b> | Chức vụ: <span style='color:#3b82f6;'><b>{st.session_state.user_role}</b></span></div>", unsafe_allow_html=True)
     with btn_col:
-        if st.button("ĐĂNG XUẤT", use_container_width=True, type="secondary"):
+        st.write("<style>div.stButton > button {background-color:#ef4444 !important; color:white !important; margin-top:5px;}</style>", unsafe_allow_html=True)
+        if st.button("ĐĂNG XUẤT", use_container_width=True):
             st.session_state.logged_in = False
             st.session_state.username = ""
             st.session_state.exam_submitted = False
@@ -107,7 +146,11 @@ else:
 
     # --- LUỒNG QUẢN LÝ (ADMIN / GIẢNG VIÊN) ---
     if st.session_state.user_role in ["Quản trị viên", "Giảng viên"]:
-        tab_users, tab_add_q, tab_results = st.tabs(["👥 QUẢN LÝ THÀNH VIÊN", "📝 TỰ BIÊN SOẠN CÂU HỎI", "📊 THỐNG KÊ ĐIỂM SỐ"])
+        tab_users, tab_edit_matrix, tab_results = st.tabs([
+            "👥 QUẢN LÝ THÀNH VIÊN", 
+            "⚙️ NGÂN HÀNG CÂU HỎI TRẮC NGHIỆM", 
+            "📊 THỐNG KÊ ĐIỂM SỐ"
+        ])
         
         with tab_users:
             st.markdown("### ➕ Thêm Tài Khoản Mới")
@@ -131,43 +174,10 @@ else:
                             st.session_state.users_db[user]["can_exam"] = current_status
                             st.toast(f"Đã cập nhật quyền thi cho {user}!")
         
-        with tab_add_q:
-            st.markdown("### 📝 Soạn Thảo Câu Hỏi Trắc Nghiệm Mới")
-            current_exam_q_count = len([q for q in st.session_state.questions_db if q["type"] == "Mục thi & Ôn tập"])
-            st.info(f"Số lượng câu hỏi trong danh mục đề thi hiện tại: **{current_exam_q_count} / 30** câu.")
-            q_text = st.text_area("Nội dung câu hỏi:")
-            o1 = st.text_input("Phương án A:")
-            o2 = st.text_input("Phương án B:")
-            o3 = st.text_input("Phương án C:")
-            q_ans = st.selectbox("Lựa chọn phương án đúng nhất:", [o1, o2, o3])
+        # --- ĐÃ THÊM: GIAO DIỆN BẢNG CHỈNH SỬA EXCEL CHUYÊN NGHIỆP Y HỆT TRONG ẢNH ---
+        with tab_edit_matrix:
+            st.markdown("### ⚙️ BẢNG QUẢN TRỊ NGÂN HÀNG ĐỀ THI")
+            st.caption("💡 Hướng dẫn: Nhấp đúp chuột vào bất kỳ ô nào để chỉnh sửa trực tiếp. Để THÊM câu hỏi mới, hãy cuộn xuống dòng dưới cùng của bảng để nhập.")
             
-            # ĐÃ THÊM: Ô nhập liệu nội dung giải thích đáp án dành cho Admin
-            q_explain = st.text_area("Giải thích đáp án (Hiển thị khi học viên trả lời sai):", placeholder="Ví dụ: Dựa theo Điều 5 Luật giao thông đường bộ...")
-            
-            q_type = st.radio("Phân loại danh mục:", ["Mục thi & Ôn tập", "Mục ôn tập"])
-            if st.button("Lưu câu hỏi vào ngân hàng đề", type="primary"):
-                if q_text and o1 and o2 and o3:
-                    st.session_state.questions_db.append({
-                        "id": len(st.session_state.questions_db) + 1, 
-                        "question": q_text, 
-                        "options": [o1, o2, o3], 
-                        "answer": q_ans, 
-                        "explain": q_explain if q_explain else "Không có phần giải thích cho câu hỏi này.",
-                        "type": q_type
-                    })
-                    st.success("Đã lưu câu hỏi thành công!")
-                    st.rerun()
-
-        with tab_results:
-            st.markdown("### 📊 Kết Quả Kiểm Tra Chi Tiết")
-            if len(st.session_state.exam_results) == 0: st.info("Chưa có dữ liệu thi nào.")
-            else:
-                df_res = pd.DataFrame(st.session_state.exam_results)
-                st.dataframe(df_res[["Thời Gian", "Sĩ Quan", "Số Câu Đúng", "Tổng Số Câu", "Tỷ Lệ", "Kết Quả"]], use_container_width=True, hide_index=True)
-
-    # --- LUỒNG HỌC VIÊN ---
-    else:
-        tab_practice, tab_exam = st.tabs(["📚 MỤC ĐỀ ÔN LUYỆN", "✍️ BÀI THI CHÍNH THỨC (25s / Câu)"])
-        
-        with tab_practice:
-            st.markdown("### Đề Ôn Luyện Kiến Thức (Tự do ôn tập)")
+            # Chuyển đổi danh sách câu hỏi hiện tại thành dạng DataFrame bảng tính
+            df_questions = pd.DataFrame(st.session_state.questions_db)
