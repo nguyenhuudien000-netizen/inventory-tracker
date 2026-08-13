@@ -170,4 +170,3 @@ else:
             else:
                 filter_type = st.selectbox("Lọc câu hỏi theo mục dữ liệu:", ["Tất cả câu hỏi", "Mục thi & Ôn tập", "Mục ôn tập"])
                 for idx, q_item in enumerate(st.session_state.questions_db):
-                    
